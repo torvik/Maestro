@@ -81,6 +81,7 @@ Guias completos:
 | `/maestro:proxima` | Executa o próximo bloco liberado no modelo certo e chama o revisor |
 | `/maestro:planejar` | Escreve a especificação de um bloco novo, com o modelo forte |
 | `/maestro:replanejar` | Ajusta o plano quando a realidade muda |
+| `/maestro:custos` | Distribuição planejada por modelo + lembrete dos comandos nativos `/context` e `/usage` |
 
 ## Padrões aplicados
 
