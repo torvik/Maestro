@@ -1,0 +1,11 @@
+{
+  "name": "maestro",
+  "owner": { "name": "Empreendedor Livre", "url": "https://empreendedorlivre.com" },
+  "plugins": [
+    {
+      "name": "maestro",
+      "source": "./plugins/maestro",
+      "description": "Planeja projetos complexos com o modelo forte e executa distribuindo cada bloco para o modelo certo."
+    }
+  ]
+}
