@@ -8,7 +8,7 @@ Plugin gratuito e aberto para [Claude Code](https://claude.com/code) que quebra 
 decide o quanto cada um é arriscado e manda cada um para o modelo certo — com critério de aceite
 verificável por teste, não por opinião do modelo.
 
-[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.0.0-blue)](plugins/maestro/CHANGELOG.md)
+[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.1.0-blue)](plugins/maestro/CHANGELOG.md)
 [![Licença](https://img.shields.io/badge/licença-MIT-lightgrey)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/requer-Claude%20Code-black)](https://claude.com/code)
 
