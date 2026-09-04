@@ -34,6 +34,7 @@ Reinicie o Claude Code (a pasta `.claude/agents/` só é detectada se existir na
 | `/maestro:proxima` | Executa o próximo bloco liberado, no modelo certo, e chama o revisor |
 | `/maestro:planejar` | Escreve a spec de um bloco (Opus) no padrão de 11 seções |
 | `/maestro:replanejar` | Ajusta o plano quando a realidade mudou |
+| `/maestro:custos` | Distribuição planejada por modelo + lembrete dos comandos nativos de custo |
 
 ## Como a troca de modelo acontece
 
@@ -115,6 +116,20 @@ Instalação para o usuário final:
 /plugin marketplace add SEU-USUARIO/seu-repo
 /plugin install maestro@maestro
 ```
+
+## Comandos nativos do Claude Code que valem a pena conhecer
+
+O Maestro não substitui estes — ele não tem acesso ao consumo real de uma sessão, só ao que o plano planejou. Use os dois juntos:
+
+| Comando | Nativo do Claude Code | O que mostra |
+|---|---|---|
+| `/context` | sim | O que está ocupando a janela **desta sessão**, por categoria, com sugestão de corte |
+| `/usage` (`/cost`, `/stats`) | sim | Custo e limite do seu plano |
+| `/agents` | sim | Agentes carregados no projeto |
+| `/plugin` | sim | Plugins instalados, origem, atualizar/remover |
+| `/tasks` | sim | Em qual modelo cada subagente rodou de fato — **confira sempre** depois de `/maestro:proxima` |
+| `/maestro:status` | Maestro | Quadro do plano + distribuição planejada por modelo |
+| `/maestro:custos` | Maestro | Atalho que junta os dois e lembra qual comando nativo checar |
 
 ## Práticas que o Maestro aplica
 

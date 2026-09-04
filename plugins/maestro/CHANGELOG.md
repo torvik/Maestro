@@ -23,3 +23,12 @@ Primeira versão pública.
 ### Notas
 - Requer Claude Code em qualquer plano pago.
 - Confirme com `/tasks` que cada subagente está rodando no modelo esperado antes de confiar no roteamento.
+
+## [1.1.0] — 2026-09-03
+
+### Adicionado
+- Comando `/maestro:custos` — panorama de distribuição planejada por modelo, com lembrete de quando usar `/context` e `/usage` nativos do Claude Code.
+- `scripts/status.py` agora encerra com um bloco de referência aos comandos nativos (`/context`, `/usage`, `/agents`, `/plugin`, `/tasks`).
+
+### Esclarecido
+- Documentado no README que o Maestro não tem acesso ao consumo real de tokens de uma sessão — isso é interno do Claude Code (`/context`, `/usage`). O Maestro mede a distribuição *planejada* por modelo a partir do plano de blocos.
