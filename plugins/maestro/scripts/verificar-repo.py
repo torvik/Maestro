@@ -11,9 +11,14 @@ import argparse
 import json
 import re
 import sys
+import urllib.request
 from pathlib import Path
 
-CHECKS = ["paridade", "portabilidade", "comandos-documentados", "versao", "plano"]
+CHECKS = ["paridade", "portabilidade", "comandos-documentados", "versao", "plano", "versao-remota"]
+
+# URL base do repositório oficial — substituída se plugin.json tiver campo "repository"
+REPO_PADRAO = "torvik/Maestro"
+RAW_URL_TMPL = "https://raw.githubusercontent.com/{repo}/main/plugins/maestro/.claude-plugin/plugin.json"
 
 
 def check_paridade(raiz: Path) -> list:
@@ -191,12 +196,64 @@ def check_plano(raiz: Path) -> list:
     return falhas
 
 
+def _versao_tuple(v):
+    try:
+        return tuple(int(x) for x in str(v).split("."))
+    except Exception:
+        return (0, 0, 0)
+
+
+def check_versao_remota(raiz: Path) -> list:
+    """Compara a versão instalada com a publicada no GitHub. Silencioso se offline."""
+    # Versão local
+    local_pj = raiz / ".claude-plugin" / "plugin.json"
+    plugin_pj = raiz / "plugins" / "maestro" / ".claude-plugin" / "plugin.json"
+    versao_local = None
+    repo = REPO_PADRAO
+    for pj in (local_pj, plugin_pj):
+        if pj.exists():
+            try:
+                data = json.loads(pj.read_text(encoding="utf-8"))
+                versao_local = data.get("version")
+                repo = data.get("repository", repo)
+                break
+            except Exception:
+                pass
+
+    if not versao_local:
+        return ["FALHA versao-remota: versão local não encontrada em plugin.json"]
+
+    url = RAW_URL_TMPL.format(repo=repo)
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "maestro-verificar-repo/1.0"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        versao_remota = data.get("version")
+    except Exception as e:
+        # Offline ou GitHub indisponível — não reporta como falha
+        print(f"  versao-remota: nao foi possivel verificar ({e.__class__.__name__})")
+        return []
+
+    if not versao_remota:
+        return ["FALHA versao-remota: campo 'version' ausente no plugin.json remoto"]
+
+    if _versao_tuple(versao_remota) > _versao_tuple(versao_local):
+        return [
+            f"FALHA versao-remota: atualização disponível — local={versao_local} remota={versao_remota}. "
+            f"Rode: /plugin update maestro"
+        ]
+
+    print(f"  versao-remota: {versao_local} — atualizado")
+    return []
+
+
 CHECKS_MAP = {
     "paridade": check_paridade,
     "portabilidade": check_portabilidade,
     "comandos-documentados": check_comandos_documentados,
     "versao": check_versao,
     "plano": check_plano,
+    "versao-remota": check_versao_remota,
 }
 
 

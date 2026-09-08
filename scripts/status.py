@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Quadro do plano. Deterministico: nao consome token de modelo."""
-import json, sys, os, glob as _glob
+import json, sys, os, glob as _glob, urllib.request
 
 CONFIG = os.environ.get("MAESTRO_CONFIG", "maestro.config.json")
 
@@ -70,6 +70,47 @@ def _resolve_metricas(plano_path):
 # ---------------------------------------------------------------------------
 # Versao
 # ---------------------------------------------------------------------------
+
+_REPO_PADRAO = "torvik/Maestro"
+_RAW_URL = "https://raw.githubusercontent.com/{repo}/main/plugins/maestro/.claude-plugin/plugin.json"
+
+def checar_atualizacao():
+    """Verifica versao remota. Silencioso se offline. Avisa se ha update."""
+    inst = _ver_plugin()
+    if not inst:
+        return
+    repo = _REPO_PADRAO
+    # Tenta ler campo repository do plugin.json local
+    for base in (".claude/plugins/maestro", ".claude", "."):
+        c = os.path.join(base, ".claude-plugin", "plugin.json")
+        if os.path.exists(c):
+            try:
+                data = json.load(open(c, encoding="utf-8"))
+                repo = data.get("repository", repo)
+            except Exception:
+                pass
+            break
+    url = _RAW_URL.format(repo=repo)
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "maestro-status/1.0"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        remota = data.get("version")
+    except Exception:
+        return  # offline ou GitHub indisponivel — silencioso
+
+    if not remota:
+        return
+
+    def _t(v):
+        try: return tuple(int(x) for x in str(v).split("."))
+        except: return (0, 0, 0)
+
+    if _t(remota) > _t(inst):
+        print(f"  ATENCAO: nova versao {remota} disponivel (instalada: {inst}).")
+        print(f"  Rode /plugin update maestro para atualizar.")
+        print()
+
 
 def _ver_plugin():
     for base in (".claude/plugins/maestro", ".claude", "."):
@@ -287,6 +328,7 @@ def main():
     args = sys.argv[1:]
     fase_arg = None
     bloco_arg = None
+    check_update = False
 
     i = 0
     while i < len(args):
@@ -294,12 +336,18 @@ def main():
             fase_arg = args[i + 1]; i += 2
         elif args[i] == "--bloco" and i + 1 < len(args):
             bloco_arg = args[i + 1]; i += 2
+        elif args[i] == "--check-update":
+            check_update = True; i += 1
         elif args[i] == "--fase":
             print("Uso: status.py --fase <nome>"); return 1
         elif args[i] == "--bloco":
             print("Uso: status.py --bloco <ID>"); return 1
         else:
             i += 1
+
+    if check_update:
+        checar_atualizacao()
+        return 0
 
     plano_path = _resolve_plano(fase_arg)
     metricas_path = _resolve_metricas(plano_path)
@@ -371,6 +419,7 @@ def main():
     print()
     distribuicao(blocos)
     resumo_metricas(metricas_path)
+    checar_atualizacao()
     return 0
 
 
