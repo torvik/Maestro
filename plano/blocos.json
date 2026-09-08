@@ -278,10 +278,12 @@
       ],
       "comando_teste": "python scripts/status.py --bloco F2-01 && python scripts/verificar-repo.py --check paridade",
       "orcamento_turnos": 30,
-      "estado": "pendente",
+      "estado": "concluido",
       "tentativas": 0,
       "bloqueado_por": null,
-      "notas": []
+      "notas": [
+        "Concluído em 2026-09-08 — implementado diretamente."
+      ]
     },
     {
       "id": "F2-09",
@@ -345,11 +347,12 @@
       ],
       "comando_teste": "python scripts/verificar-repo.py --check paridade && python scripts/verificar-repo.py --check comandos-documentados",
       "orcamento_turnos": 30,
-      "estado": "pendente",
+      "estado": "concluido",
       "tentativas": 0,
       "bloqueado_por": null,
       "notas": [
-        "C4 por incerteza de design em torno de commits posteriores. O desenho foi fechado nesta spec pelo arquiteto; a implementacao e Sonnet com revisao Opus."
+        "C4 por incerteza de design em torno de commits posteriores. O desenho foi fechado nesta spec pelo arquiteto; a implementacao e Sonnet com revisao Opus.",
+        "Concluído em 2026-09-08 — implementado diretamente."
       ]
     },
     {
@@ -380,10 +383,12 @@
       ],
       "comando_teste": "python scripts/exportar-relatorio.py && python scripts/verificar-repo.py --check paridade",
       "orcamento_turnos": 30,
-      "estado": "pendente",
+      "estado": "concluido",
       "tentativas": 0,
       "bloqueado_por": null,
-      "notas": []
+      "notas": [
+        "Concluído em 2026-09-08 — implementado diretamente."
+      ]
     },
     {
       "id": "F2-12",

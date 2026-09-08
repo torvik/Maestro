@@ -52,7 +52,22 @@ Digite uma barra:
 /
 ```
 
-Devem aparecer na lista: `maestro:setup`, `maestro:status`, `maestro:proxima`, `maestro:planejar` e `maestro:replanejar`.
+Devem aparecer na lista todos os comandos do Maestro:
+
+| Comando | O que faz |
+|---|---|
+| `/maestro:setup` | Configura o plano no seu projeto |
+| `/maestro:status` | Quadro geral — concluído, liberado, travado |
+| `/maestro:proxima` | Executa o próximo bloco no modelo certo |
+| `/maestro:planejar` | Especifica um bloco sem spec |
+| `/maestro:replanejar` | Ajusta o plano quando a realidade muda |
+| `/maestro:custos` | Distribuição planejada por modelo |
+| `/maestro:retomar` | Recupera blocos interrompidos após crash |
+| `/maestro:revisar <ID>` | Revisão de auditoria de qualquer bloco |
+| `/maestro:destravar <ID>` | Limpa bloqueio de um bloco sem editar JSON |
+| `/maestro:editar <ID>` | Ajusta a spec de um bloco |
+| `/maestro:rollback <ID>` | Desfaz um bloco aprovado por engano |
+| `/maestro:exportar` | Gera relatório completo do plano |
 
 Se apareceram, **está instalado**. Pule para "Primeiro uso".
 
@@ -134,13 +149,13 @@ Ele pega a próxima tarefa liberada, manda para o modelo certo, chama um revisor
 
 ### 4. Confira se o roteamento funcionou
 
-Este passo vale muito. Enquanto ou logo depois de executar, digite:
+Este passo vale muito. Antes de executar cada bloco, o Maestro imprime na conversa uma linha como:
 
 ```
-/tasks
+→ F1-01 Criar banco de dados · C2 · modelo: claude-haiku-4-5 · agente: maestro:operario
 ```
 
-Isso mostra em qual modelo cada agente rodou. **Confirme que uma tarefa simples foi mesmo para o modelo mais barato.** Se todas rodaram no mesmo modelo, a economia não está acontecendo — e é melhor descobrir agora.
+**Confirme que o modelo e o agente batem com a complexidade do bloco.** Bloco C1–C2 deve ir para Haiku; C3 para Sonnet; C4–C5 para Opus. Se todos estiverem no mesmo modelo, a economia não está acontecendo — e é melhor descobrir agora.
 
 ---
 
@@ -152,7 +167,7 @@ Isso mostra em qual modelo cada agente rodou. **Confirme que uma tarefa simples 
 | `/agents` não lista os agentes | Os arquivos foram para o lugar errado. Rode `ls .claude/agents/` e veja se estão lá |
 | `/maestro:status` reclama que não achou o plano | O plano ainda não existe. Rode `/maestro:setup` |
 | Aparece "python3 não encontrado" | Instale o Python 3, ou peça ao Claude: "rode o script de status para mim" |
-| Todas as tarefas rodam no mesmo modelo | Confira com `/tasks`. Se persistir, reinstale e reinicie |
+| Todas as tarefas rodam no mesmo modelo | O modelo aparece antes de cada execução. Se não aparecer, reinstale e reinicie |
 | Um bloco aparece como "travado" | É proposital: falta uma decisão sua, uma credencial ou um dado. O status diz qual |
 
 ---

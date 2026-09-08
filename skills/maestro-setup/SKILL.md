@@ -86,10 +86,21 @@ E `plano/blocos.json` conforme `../planejar-projeto/references/schema-blocos.md`
 ## Passo 4 — Validar e mostrar
 Use a skill `maestro-runtime` para localizar e rodar `validar-plano.py` e depois `status.py`. Mostre o quadro e diga qual é o próximo bloco liberado.
 
-## Passo 5 — Fechar com as três ações
-- `/maestro:status` — ver onde está
-- `/maestro:proxima` — executar o próximo bloco
-- `/maestro:planejar` — especificar um bloco sem spec
+## Passo 5 — Fechar com os comandos disponíveis
+
+| Comando | Quando usar |
+|---|---|
+| `/maestro:status` | Ver o quadro — concluído, liberado, travado |
+| `/maestro:proxima` | Executar o próximo bloco no modelo certo |
+| `/maestro:planejar` | Especificar um bloco sem spec |
+| `/maestro:replanejar` | Ajustar o plano quando a realidade muda |
+| `/maestro:custos` | Ver distribuição planejada por modelo |
+| `/maestro:retomar` | Recuperar bloco interrompido após crash |
+| `/maestro:revisar <ID>` | Revisão de auditoria de qualquer bloco |
+| `/maestro:destravar <ID>` | Limpar bloqueio sem editar JSON |
+| `/maestro:editar <ID>` | Ajustar a spec de um bloco |
+| `/maestro:rollback <ID>` | Desfazer um bloco aprovado por engano |
+| `/maestro:exportar` | Gerar relatório completo do plano |
 
 ## Nunca
 - Nunca sobrescreva um plano existente sem confirmar.
