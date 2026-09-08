@@ -55,7 +55,28 @@ Revisor precisa ser sempre ≥ executor. C1–C3 → revisor Sonnet. C4–C5 →
 O executor recebe **somente**: a spec do bloco, o arquivo de convenções listado em `maestro.config.json → convencoes`, e os arquivos citados na seção "Arquivos" da spec. Leia `maestro.config.json` para obter o caminho correto antes de despachar.
 Ele **não recebe**: o brief do produto, specs de outros blocos, ou histórico de conversa. Contexto extra faz o modelo puxar padrão de outro bloco.
 
-**Um bloco por sessão.** Sem exceção.
+**Um bloco por sessão — exceto com `--paralelo`.** Com `--paralelo`, rode `scripts/paralelo.py` para obter o lote. Se o lote tiver mais de 1 bloco, siga o ciclo de lote abaixo.
+
+## Ciclo de lote paralelo (ativado por `--paralelo`)
+
+1. **Rode `scripts/paralelo.py`** (via maestro-runtime). Se o lote tiver 1 bloco, execute o ciclo normal. Se o lote estiver vazio, reporte e pare.
+2. **Anuncie cada bloco do lote** antes de despachar:
+   ```
+   → LOTE [N blocos]
+     [ID1] [titulo] · C[N] · modelo: [modelo] · agente: [agente]
+     [ID2] ...
+   ```
+3. **Marque todos como `em_andamento`** em `plano/blocos.json` antes de despachar.
+4. **Despache os executores** de cada bloco (Agent, passando `model` correto). Os blocos executam simultaneamente.
+5. **Colete os resultados.** Aguarde todos os executores terminarem antes de prosseguir.
+6. **Acione o revisor de cada bloco** em sessão separada, sequencialmente.
+7. **Serializa commits (em ordem de ID crescente):**
+   - Para cada bloco aprovado: verifica `comando_teste` → commita → registra em `metricas.json` → marca `concluido`.
+   - Para cada bloco reprovado: marca `pendente`, `tentativas++`, anota motivo.
+   - Nenhum bloco fica em `em_andamento` ao final.
+8. **Só o maestro escreve em `plano/blocos.json` e `plano/metricas.json`** durante o lote. Os executores não escrevem nesses arquivos.
+9. **Falha parcial:** bloco reprovado ou que trava → `pendente`. Os demais seguem o ciclo normalmente.
+10. **Reporte ao usuário:** resultado de cada bloco, próximo lote disponível.
 
 ## O que você nunca faz
 - Nunca edita código. Você só edita `plano/blocos.json`.
