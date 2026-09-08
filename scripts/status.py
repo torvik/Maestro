@@ -1,9 +1,75 @@
 #!/usr/bin/env python3
 """Quadro do plano. Deterministico: nao consome token de modelo."""
-import json, sys, os
+import json, sys, os, glob as _glob
 
-PLANO = os.environ.get("MAESTRO_PLANO", "plano/blocos.json")
 CONFIG = os.environ.get("MAESTRO_CONFIG", "maestro.config.json")
+
+# ---------------------------------------------------------------------------
+# Resolucao de fase (4 regras de precedencia)
+# ---------------------------------------------------------------------------
+
+def _resolve_plano(fase_arg):
+    """Resolve o caminho do blocos.json pelas 4 regras de precedencia.
+    Sai com codigo 1 em erro. Retorna o caminho resolvido."""
+    env_plano = os.environ.get("MAESTRO_PLANO")
+
+    # fase_padrao do config equivale a --fase quando --fase ausente
+    if not fase_arg:
+        if os.path.exists(CONFIG):
+            try:
+                c = json.load(open(CONFIG, encoding="utf-8"))
+                fase_arg = c.get("fase_padrao") or None
+            except Exception:
+                pass
+
+    # Regra 1: --fase explicito (ou fase_padrao do config)
+    if fase_arg:
+        if env_plano:
+            print(f"AVISO: MAESTRO_PLANO={env_plano!r} ignorado — --fase {fase_arg!r} tem precedencia.",
+                  file=sys.stderr)
+        caminho = f"plano/{fase_arg}/blocos.json"
+        if not os.path.exists(caminho):
+            found = sorted(_glob.glob("plano/*/blocos.json"))
+            print(f"ERRO: fase {fase_arg!r} nao encontrada ({caminho}).", file=sys.stderr)
+            if found:
+                fases = [f.split("/")[1] for f in found]
+                print(f"  Fases disponiveis: {', '.join(fases)}", file=sys.stderr)
+            sys.exit(1)
+        return caminho
+
+    # Regra 2: MAESTRO_PLANO ou legado plano/blocos.json
+    if env_plano:
+        return env_plano
+    legacy = "plano/blocos.json"
+    if os.path.exists(legacy):
+        return legacy
+
+    # Regras 3 & 4: glob
+    found = sorted(_glob.glob("plano/*/blocos.json"))
+    if len(found) == 1:
+        print(f"Fase resolvida: {found[0]}", file=sys.stderr)
+        return found[0]
+    elif len(found) == 0:
+        print("ERRO: nenhum plano encontrado. Rode /maestro:setup.", file=sys.stderr)
+        sys.exit(1)
+    else:
+        fases = [f.split("/")[1] for f in found]
+        print(f"ERRO: multiplas fases encontradas: {', '.join(fases)}", file=sys.stderr)
+        print("  Passe --fase <nome> para selecionar.", file=sys.stderr)
+        sys.exit(1)
+
+
+def _resolve_metricas(plano_path):
+    """Deriva o caminho de metricas.json a partir do plano resolvido."""
+    env = os.environ.get("MAESTRO_METRICAS")
+    if env:
+        return env
+    return os.path.join(os.path.dirname(plano_path), "metricas.json")
+
+
+# ---------------------------------------------------------------------------
+# Versao
+# ---------------------------------------------------------------------------
 
 def _ver_plugin():
     for base in (".claude/plugins/maestro", ".claude", "."):
@@ -30,6 +96,10 @@ def checar_versao():
         print(f"  ATENCAO: o plano foi criado na versao {usada} e o plugin e {inst}.")
         print("  O formato do plano mudou. Rode /maestro:setup para migrar antes de executar.")
     print()
+
+# ---------------------------------------------------------------------------
+# Icones e distribuicao
+# ---------------------------------------------------------------------------
 
 ICON = {"concluido": "[x]", "em_andamento": "[~]", "bloqueado": "[!]", "pendente": "[ ]"}
 
@@ -70,11 +140,15 @@ def distribuicao(blocos):
         print(f"  {bid}: {n} tentativas -> corrija a SPEC antes de escalar o modelo")
     print()
 
-def detalhe_bloco(bid):
-    if not os.path.exists(PLANO):
-        print(f"Plano nao encontrado em {PLANO}.")
+# ---------------------------------------------------------------------------
+# Detalhe de bloco
+# ---------------------------------------------------------------------------
+
+def detalhe_bloco(bid, plano_path, metricas_path):
+    if not os.path.exists(plano_path):
+        print(f"Plano nao encontrado em {plano_path}.")
         return 1
-    with open(PLANO, encoding="utf-8") as f:
+    with open(plano_path, encoding="utf-8") as f:
         plano = json.load(f)
     blocos = plano.get("blocos", [])
     by_id = {b["id"]: b for b in blocos}
@@ -145,9 +219,9 @@ def detalhe_bloco(bid):
         print("  nenhuma")
 
     # Metricas do bloco
-    if os.path.exists(METRICAS):
+    if os.path.exists(metricas_path):
         try:
-            m = json.load(open(METRICAS, encoding="utf-8"))
+            m = json.load(open(metricas_path, encoding="utf-8"))
             if m.get("schema") == 1:
                 regs = [r for r in m.get("registros", []) if r.get("id") == bid]
                 regs.sort(key=lambda x: x.get("timestamp_fim", ""))
@@ -169,21 +243,75 @@ def detalhe_bloco(bid):
     print()
     return 0
 
+# ---------------------------------------------------------------------------
+# Resumo de metricas
+# ---------------------------------------------------------------------------
+
+def resumo_metricas(metricas_path):
+    if not os.path.exists(metricas_path):
+        return
+    try:
+        with open(metricas_path, encoding="utf-8") as f:
+            m = json.load(f)
+    except Exception as e:
+        print(f"  AVISO: metricas.json invalido ({e}) — ignorado.")
+        return
+    if m.get("schema") != 1:
+        print(f"  AVISO: metricas.json schema={m.get('schema')} desconhecido — ignorado.")
+        return
+    regs = m.get("registros", [])
+    if not regs:
+        return
+    reprovados = sum(1 for r in regs if r.get("veredito") == "reprovado")
+    usados = [r["turnos_usados"] for r in regs if r.get("turnos_usados") is not None]
+    orcados = [r["turnos_orcados"] for r in regs if r.get("turnos_usados") is not None]
+    ignorados = sum(1 for r in regs if r.get("turnos_usados") is None)
+    ids_duplos = [i for i in {r["id"] for r in regs} if sum(1 for r in regs if r["id"] == i) >= 2]
+    print("--- METRICAS ---")
+    print(f"  blocos medidos: {len(regs)}")
+    if usados:
+        extra = f"  ({ignorados} sem contagem)" if ignorados else ""
+        print(f"  turnos: {sum(usados)}/{sum(orcados)}{extra}")
+    else:
+        print(f"  turnos: n/a ({ignorados} sem contagem)")
+    print(f"  reprovacoes: {reprovados}")
+    if ids_duplos:
+        print(f"  blocos com 2+ registros: {', '.join(sorted(ids_duplos))}")
+    print()
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
 
 def main():
-    # Modo --bloco <ID>
     args = sys.argv[1:]
-    if args and args[0] == "--bloco":
-        if len(args) < 2:
-            print("Uso: status.py --bloco <ID>")
-            return 1
-        return detalhe_bloco(args[1])
+    fase_arg = None
+    bloco_arg = None
 
-    if not os.path.exists(PLANO):
-        print(f"Plano nao encontrado em {PLANO}. Rode /maestro:setup.")
+    i = 0
+    while i < len(args):
+        if args[i] == "--fase" and i + 1 < len(args):
+            fase_arg = args[i + 1]; i += 2
+        elif args[i] == "--bloco" and i + 1 < len(args):
+            bloco_arg = args[i + 1]; i += 2
+        elif args[i] == "--fase":
+            print("Uso: status.py --fase <nome>"); return 1
+        elif args[i] == "--bloco":
+            print("Uso: status.py --bloco <ID>"); return 1
+        else:
+            i += 1
+
+    plano_path = _resolve_plano(fase_arg)
+    metricas_path = _resolve_metricas(plano_path)
+
+    if bloco_arg:
+        return detalhe_bloco(bloco_arg, plano_path, metricas_path)
+
+    if not os.path.exists(plano_path):
+        print(f"Plano nao encontrado em {plano_path}. Rode /maestro:setup.")
         return 1
     checar_versao()
-    with open(PLANO, encoding="utf-8") as f:
+    with open(plano_path, encoding="utf-8") as f:
         plano = json.load(f)
 
     blocos = plano.get("blocos", [])
@@ -191,7 +319,6 @@ def main():
 
     liberados, travados, bloqueados = [], [], []
     for b in blocos:
-        # estado: "bloqueado" e bloqueado_por preenchido sao mecanismos equivalentes
         if b.get("estado") == "bloqueado":
             bloqueados.append(b); continue
         if b.get("estado") != "pendente":
@@ -243,42 +370,9 @@ def main():
             print(f"  {b['id']}  {motivo}")
     print()
     distribuicao(blocos)
-    resumo_metricas()
+    resumo_metricas(metricas_path)
     return 0
 
-METRICAS = os.environ.get("MAESTRO_METRICAS", "plano/metricas.json")
-
-def resumo_metricas():
-    if not os.path.exists(METRICAS):
-        return
-    try:
-        with open(METRICAS, encoding="utf-8") as f:
-            m = json.load(f)
-    except Exception as e:
-        print(f"  AVISO: metricas.json invalido ({e}) — ignorado.")
-        return
-    if m.get("schema") != 1:
-        print(f"  AVISO: metricas.json schema={m.get('schema')} desconhecido — ignorado.")
-        return
-    regs = m.get("registros", [])
-    if not regs:
-        return
-    reprovados = sum(1 for r in regs if r.get("veredito") == "reprovado")
-    usados = [r["turnos_usados"] for r in regs if r.get("turnos_usados") is not None]
-    orcados = [r["turnos_orcados"] for r in regs if r.get("turnos_usados") is not None]
-    ignorados = sum(1 for r in regs if r.get("turnos_usados") is None)
-    ids_duplos = [i for i in {r["id"] for r in regs} if sum(1 for r in regs if r["id"] == i) >= 2]
-    print("--- METRICAS ---")
-    print(f"  blocos medidos: {len(regs)}")
-    if usados:
-        extra = f"  ({ignorados} sem contagem)" if ignorados else ""
-        print(f"  turnos: {sum(usados)}/{sum(orcados)}{extra}")
-    else:
-        print(f"  turnos: n/a ({ignorados} sem contagem)")
-    print(f"  reprovacoes: {reprovados}")
-    if ids_duplos:
-        print(f"  blocos com 2+ registros: {', '.join(sorted(ids_duplos))}")
-    print()
 
 if __name__ == "__main__":
     sys.exit(main())

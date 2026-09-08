@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Valida o plano contra as regras invioláveis. Deterministico."""
-import json, sys, os
+import json, sys, os, glob as _glob
 
-PLANO = os.environ.get("MAESTRO_PLANO", "plano/blocos.json")
+CONFIG = os.environ.get("MAESTRO_CONFIG", "maestro.config.json")
+
 HAIKU = "haiku"
 OBRIG = ["id","titulo","spec","complexidade","modelo","agente","revisor_modelo",
          "depende_de","arquivos_permitidos","criterio_aceite","estado",
@@ -14,6 +15,61 @@ VAGO = ("rapido", "rápido", "adequadamente", "corretamente", "bem ", "boa ", "f
 ORC = {"C1": 15, "C2": 15, "C3": 30, "C4": 30, "C5": 40}
 RANK = {"haiku": 1, "sonnet": 2, "opus": 3, "fable": 4}
 
+# ---------------------------------------------------------------------------
+# Resolucao de fase (4 regras de precedencia)
+# ---------------------------------------------------------------------------
+
+def _resolve_plano(fase_arg):
+    """Resolve o caminho do blocos.json pelas 4 regras de precedencia.
+    Sai com codigo 1 em erro. Retorna o caminho resolvido."""
+    env_plano = os.environ.get("MAESTRO_PLANO")
+
+    # fase_padrao do config equivale a --fase quando --fase ausente
+    if not fase_arg:
+        if os.path.exists(CONFIG):
+            try:
+                c = json.load(open(CONFIG, encoding="utf-8"))
+                fase_arg = c.get("fase_padrao") or None
+            except Exception:
+                pass
+
+    # Regra 1: --fase explicito (ou fase_padrao do config)
+    if fase_arg:
+        if env_plano:
+            print(f"AVISO: MAESTRO_PLANO={env_plano!r} ignorado — --fase {fase_arg!r} tem precedencia.",
+                  file=sys.stderr)
+        caminho = f"plano/{fase_arg}/blocos.json"
+        if not os.path.exists(caminho):
+            found = sorted(_glob.glob("plano/*/blocos.json"))
+            print(f"ERRO: fase {fase_arg!r} nao encontrada ({caminho}).", file=sys.stderr)
+            if found:
+                fases = [f.split("/")[1] for f in found]
+                print(f"  Fases disponiveis: {', '.join(fases)}", file=sys.stderr)
+            sys.exit(1)
+        return caminho
+
+    # Regra 2: MAESTRO_PLANO ou legado plano/blocos.json
+    if env_plano:
+        return env_plano
+    legacy = "plano/blocos.json"
+    if os.path.exists(legacy):
+        return legacy
+
+    # Regras 3 & 4: glob
+    found = sorted(_glob.glob("plano/*/blocos.json"))
+    if len(found) == 1:
+        print(f"Fase resolvida: {found[0]}", file=sys.stderr)
+        return found[0]
+    elif len(found) == 0:
+        print("ERRO: nenhum plano encontrado. Rode /maestro:setup.", file=sys.stderr)
+        sys.exit(1)
+    else:
+        fases = [f.split("/")[1] for f in found]
+        print(f"ERRO: multiplas fases encontradas: {', '.join(fases)}", file=sys.stderr)
+        print("  Passe --fase <nome> para selecionar.", file=sys.stderr)
+        sys.exit(1)
+
+
 def rank(model):
     for k, v in RANK.items():
         if k in (model or "").lower():
@@ -21,12 +77,26 @@ def rank(model):
     return 0
 
 def main():
-    if not os.path.exists(PLANO):
-        print(f"ERRO: plano nao encontrado em {PLANO}"); return 1
-    with open(PLANO, encoding="utf-8") as f:
-        plano = json.load(f)
+    # Parsing de argumentos
+    args = sys.argv[1:]
+    fase_arg = None
+    i = 0
+    while i < len(args):
+        if args[i] == "--fase" and i + 1 < len(args):
+            fase_arg = args[i + 1]; i += 2
+        elif args[i] == "--fase":
+            print("Uso: validar-plano.py [--fase <nome>]"); return 1
+        else:
+            i += 1
 
-    blocos = plano.get("blocos", [])
+    plano = _resolve_plano(fase_arg)
+
+    if not os.path.exists(plano):
+        print(f"ERRO: plano nao encontrado em {plano}"); return 1
+    with open(plano, encoding="utf-8") as f:
+        dados = json.load(f)
+
+    blocos = dados.get("blocos", [])
     ids = [b.get("id") for b in blocos]
     erros, avisos = [], []
 
@@ -61,8 +131,11 @@ def main():
         if rv and rank(rv) < rank(b.get("modelo")):
             erros.append(f"{bid}: revisor ({rv}) inferior ao executor ({b.get('modelo')})")
 
+        # depende_de: sem cruzamento de fase (formato "fase:ID" proibido)
         for dep in b.get("depende_de", []):
-            if dep not in ids:
+            if ":" in str(dep):
+                erros.append(f"{bid}: depende_de cruza fase — '{dep}' e invalido (blocos de fases diferentes sao planos independentes)")
+            elif dep not in ids:
                 erros.append(f"{bid}: depende de bloco inexistente: {dep}")
 
         crits = b.get("criterio_aceite") or []
@@ -102,7 +175,7 @@ def main():
         if ciclo(n):
             erros.append(f"Ciclo de dependencia envolvendo {n}"); break
 
-    print(f"\nValidando {PLANO} — {len(blocos)} blocos\n")
+    print(f"\nValidando {plano} — {len(blocos)} blocos\n")
     for e in erros: print(f"  ERRO   {e}")
     for a in avisos: print(f"  AVISO  {a}")
     if not erros and not avisos:

@@ -3,6 +3,8 @@ description: Escreve a spec de um bloco (ou planeja um projeto novo) com o arqui
 argument-hint: [ID do bloco ou descrição do que planejar]
 ---
 
+Se `$ARGUMENTS` contiver `--fase <nome>`: registre o plano em `plano/<nome>/blocos.json` em vez de `plano/blocos.json`. Passe `--fase <nome>` ao `validar-plano.py` ao final.
+
 Use a skill `planejar-projeto` e delegue ao agente `arquiteto`.
 
 Alvo: $ARGUMENTS

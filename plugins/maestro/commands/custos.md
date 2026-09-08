@@ -2,6 +2,8 @@
 description: Panorama de custo — a distribuição planejada por modelo (Maestro) e um lembrete de onde checar o gasto real da sessão (Claude Code).
 ---
 
+Se `$ARGUMENTS` contiver `--fase <nome>`: passe `--fase <nome>` ao script invocado.
+
 Encontre e rode o script `status.py` do Maestro. Use a skill `maestro-runtime`: localize `status.py` com o procedimento `localizar` e invoque com o interpretador do procedimento `interpretador`. Se nenhum interpretador ou caminho existir: leia `plano/blocos.json` diretamente e calcule/exiba a distribuição por modelo (agrupe os blocos pelo campo `modelo`, classifique em tier haiku/sonnet/opus e mostre contagem e percentual de custo usando pesos haiku=1, sonnet=2, opus=5).
 
 Destaque só a parte de distribuição por modelo e o bloco de comandos nativos.

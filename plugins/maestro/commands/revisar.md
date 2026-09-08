@@ -3,7 +3,9 @@ description: Dispara revisão de auditoria de um bloco específico, independente
 argument-hint: <ID do bloco>
 ---
 
-Leia `plano/blocos.json` e encontre o bloco com id igual a $ARGUMENTS.
+Se `$ARGUMENTS` contiver `--fase <nome>`: use `plano/<nome>/blocos.json` em vez de `plano/blocos.json`. Encerre com erro se o arquivo não existir.
+
+Leia `plano/blocos.json` (ou o caminho resolvido acima) e encontre o bloco com id igual a $ARGUMENTS.
 
 Se $ARGUMENTS estiver vazio, liste os blocos concluídos ou em_andamento e peça ao usuário qual revisar.
 

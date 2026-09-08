@@ -3,6 +3,8 @@ description: Executa o próximo bloco liberado do plano, no modelo que a complex
 argument-hint: [opcional: ID de um bloco específico]
 ---
 
+Se `$ARGUMENTS` contiver `--fase <nome>`: resolva o plano como `plano/<nome>/blocos.json`. Encerre com erro se o arquivo não existir. Passe `--fase <nome>` a qualquer script invocado.
+
 Se $ARGUMENTS contiver `--dry-run`: leia `plano/blocos.json` e `maestro.config.json`, identifique o próximo bloco liberado e exiba — ID, complexidade, modelo, agente, orçamento de turnos e arquivos_permitidos — sem despachar nada.
 
 Caso contrário, delegue ao agente `maestro`, usando a skill `executar-bloco`.

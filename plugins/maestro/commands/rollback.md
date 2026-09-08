@@ -3,7 +3,9 @@ description: Desfaz um bloco aprovado usando git revert (nunca git reset). Exige
 argument-hint: <ID>
 ---
 
-Leia `plano/blocos.json` e `plano/metricas.json`.
+Se `$ARGUMENTS` contiver `--fase <nome>`: use `plano/<nome>/blocos.json` e `plano/<nome>/metricas.json` em vez dos caminhos legados. Encerre com erro se `blocos.json` não existir.
+
+Leia `plano/blocos.json` (ou o caminho resolvido acima) e o `metricas.json` correspondente.
 
 Se `$ARGUMENTS` estiver vazio: informe que o ID é obrigatório e liste os blocos com estado `concluido`. Pare.
 

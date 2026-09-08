@@ -3,9 +3,11 @@ description: Ajusta a spec de um bloco — ajuste pontual (só a mudança descri
 argument-hint: <ID>
 ---
 
-Leia `plano/blocos.json`.
+Se `$ARGUMENTS` contiver `--fase <nome>`: use `plano/<nome>/blocos.json` em vez de `plano/blocos.json`. Encerre com erro se o arquivo não existir.
 
-Se `$ARGUMENTS` estiver vazio: liste os blocos que têm campo `spec` preenchido e pergunte qual ID o usuário quer editar. Pare aqui.
+Leia `plano/blocos.json` (ou o caminho resolvido acima).
+
+Se `$ARGUMENTS` estiver vazio (desconsiderando `--fase`): liste os blocos que têm campo `spec` preenchido e pergunte qual ID o usuário quer editar. Pare aqui.
 
 Se `$ARGUMENTS` tiver um ID:
 

@@ -2,6 +2,8 @@
 description: Mostra o quadro do plano — concluído, em andamento, liberado, travado.
 ---
 
+Se `$ARGUMENTS` contiver `--fase <nome>`: passe `--fase <nome>` ao script invocado. O script resolve o caminho do plano pelas 4 regras de precedência.
+
 Use a skill `maestro-runtime` para localizar `status.py` e invoque com o interpretador detectado.
 
 - Sem argumentos: exibe o quadro geral do plano (estado, próximo bloco, bloqueados, distribuição por modelo e métricas se disponíveis).

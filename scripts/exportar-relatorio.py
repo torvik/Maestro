@@ -4,6 +4,7 @@ Deterministico: sem texto gerado por modelo, sem consulta ao git.
 
 Uso:
   python scripts/exportar-relatorio.py
+  python scripts/exportar-relatorio.py --fase <nome>
   python scripts/exportar-relatorio.py --saida outro/caminho.md
 """
 
@@ -11,12 +12,78 @@ import json
 import sys
 import os
 import re
+import glob as _glob
 from pathlib import Path
 from datetime import datetime
 
-PLANO = os.environ.get("MAESTRO_PLANO", "plano/blocos.json")
-METRICAS = os.environ.get("MAESTRO_METRICAS", "plano/metricas.json")
+CONFIG = os.environ.get("MAESTRO_CONFIG", "maestro.config.json")
 
+# ---------------------------------------------------------------------------
+# Resolucao de fase (4 regras de precedencia)
+# ---------------------------------------------------------------------------
+
+def _resolve_plano(fase_arg):
+    """Resolve o caminho do blocos.json pelas 4 regras de precedencia.
+    Sai com codigo 1 em erro. Retorna o caminho resolvido."""
+    env_plano = os.environ.get("MAESTRO_PLANO")
+
+    # fase_padrao do config equivale a --fase quando --fase ausente
+    if not fase_arg:
+        if os.path.exists(CONFIG):
+            try:
+                c = json.load(open(CONFIG, encoding="utf-8"))
+                fase_arg = c.get("fase_padrao") or None
+            except Exception:
+                pass
+
+    # Regra 1: --fase explicito (ou fase_padrao do config)
+    if fase_arg:
+        if env_plano:
+            print(f"AVISO: MAESTRO_PLANO={env_plano!r} ignorado — --fase {fase_arg!r} tem precedencia.",
+                  file=sys.stderr)
+        caminho = f"plano/{fase_arg}/blocos.json"
+        if not os.path.exists(caminho):
+            found = sorted(_glob.glob("plano/*/blocos.json"))
+            print(f"ERRO: fase {fase_arg!r} nao encontrada ({caminho}).", file=sys.stderr)
+            if found:
+                fases = [f.split("/")[1] for f in found]
+                print(f"  Fases disponiveis: {', '.join(fases)}", file=sys.stderr)
+            sys.exit(1)
+        return caminho
+
+    # Regra 2: MAESTRO_PLANO ou legado plano/blocos.json
+    if env_plano:
+        return env_plano
+    legacy = "plano/blocos.json"
+    if os.path.exists(legacy):
+        return legacy
+
+    # Regras 3 & 4: glob
+    found = sorted(_glob.glob("plano/*/blocos.json"))
+    if len(found) == 1:
+        print(f"Fase resolvida: {found[0]}", file=sys.stderr)
+        return found[0]
+    elif len(found) == 0:
+        print("ERRO: nenhum plano encontrado. Rode /maestro:setup.", file=sys.stderr)
+        sys.exit(1)
+    else:
+        fases = [f.split("/")[1] for f in found]
+        print(f"ERRO: multiplas fases encontradas: {', '.join(fases)}", file=sys.stderr)
+        print("  Passe --fase <nome> para selecionar.", file=sys.stderr)
+        sys.exit(1)
+
+
+def _resolve_metricas(plano_path):
+    """Deriva o caminho de metricas.json a partir do plano resolvido."""
+    env = os.environ.get("MAESTRO_METRICAS")
+    if env:
+        return env
+    return os.path.join(os.path.dirname(plano_path), "metricas.json")
+
+
+# ---------------------------------------------------------------------------
+# Geracao do relatorio
+# ---------------------------------------------------------------------------
 
 def _raiz():
     return Path(__file__).resolve().parent.parent
@@ -60,8 +127,8 @@ def _extrair_secoes(spec_path: Path) -> str:
     return "\n\n".join(trechos)
 
 
-def gerar(saida: Path, raiz: Path):
-    plano_path = raiz / PLANO
+def gerar(saida: Path, raiz: Path, plano_str: str, metricas_str: str):
+    plano_path = raiz / plano_str
     if not plano_path.exists():
         print(f"Erro: {plano_path} nao encontrado.")
         return 1
@@ -78,7 +145,7 @@ def gerar(saida: Path, raiz: Path):
     hoje = datetime.now().strftime("%Y-%m-%d")
 
     # Metricas (opcional)
-    metricas_path = raiz / METRICAS
+    metricas_path = raiz / metricas_str
     regs_por_id = {}
     if metricas_path.exists():
         try:
@@ -105,7 +172,7 @@ def gerar(saida: Path, raiz: Path):
 
     linhas = []
     linhas.append(f"# {projeto} — plano de execucao")
-    linhas.append(f"Gerado em {hoje} a partir de {PLANO}")
+    linhas.append(f"Gerado em {hoje} a partir de {plano_str}")
     linhas.append("")
 
     # Resumo
@@ -199,18 +266,29 @@ def gerar(saida: Path, raiz: Path):
 
 def main():
     args = sys.argv[1:]
-    saida_str = "plano/RELATORIO.md"
+    fase_arg = None
+    saida_str = None
     i = 0
     while i < len(args):
-        if args[i] == "--saida" and i + 1 < len(args):
-            saida_str = args[i + 1]
-            i += 2
+        if args[i] == "--fase" and i + 1 < len(args):
+            fase_arg = args[i + 1]; i += 2
+        elif args[i] == "--saida" and i + 1 < len(args):
+            saida_str = args[i + 1]; i += 2
+        elif args[i] in ("--fase", "--saida"):
+            print(f"Uso: exportar-relatorio.py [--fase <nome>] [--saida <caminho>]"); return 1
         else:
             i += 1
 
+    plano_str = _resolve_plano(fase_arg)
+
+    # Saida padrao deriva do diretorio do plano
+    if saida_str is None:
+        saida_str = os.path.join(os.path.dirname(plano_str), "RELATORIO.md")
+
+    metricas_str = _resolve_metricas(plano_str)
     raiz = Path(__file__).resolve().parent.parent
     saida = raiz / saida_str
-    sys.exit(gerar(saida, raiz))
+    sys.exit(gerar(saida, raiz, plano_str, metricas_str))
 
 
 if __name__ == "__main__":

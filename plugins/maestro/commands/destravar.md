@@ -3,7 +3,9 @@ description: Limpa o bloqueio de um bloco sem editar plano/blocos.json manualmen
 argument-hint: <ID>
 ---
 
-Leia `plano/blocos.json`.
+Se `$ARGUMENTS` contiver `--fase <nome>`: use `plano/<nome>/blocos.json` em vez de `plano/blocos.json`. Encerre com erro se o arquivo não existir.
+
+Leia `plano/blocos.json` (ou o caminho resolvido acima).
 
 Se `$ARGUMENTS` estiver vazio: liste todos os blocos com `bloqueado_por` preenchido ou `estado: "bloqueado"` e pergunte qual ID o usuário quer destravar. Pare aqui.
 

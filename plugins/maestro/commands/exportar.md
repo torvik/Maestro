@@ -2,9 +2,11 @@
 description: Gera plano/RELATORIO.md com o plano completo, status de cada bloco e métricas. Artefato para compartilhar com o time sem precisar do Claude Code.
 ---
 
+Se `$ARGUMENTS` contiver `--fase <nome>`: passe `--fase <nome>` ao script invocado. O relatório gerado vai para `plano/<nome>/RELATORIO.md`.
+
 Use a skill `maestro-runtime` para localizar `exportar-relatorio.py` e invoque com o interpretador do procedimento `interpretador`.
 
-Se o script for encontrado: `<interpretador> scripts/exportar-relatorio.py`
+Se o script for encontrado: `<interpretador> scripts/exportar-relatorio.py [--fase <nome> se presente]`
 
 Se o script **não** for encontrado: gere o relatório lendo diretamente `plano/blocos.json`, `plano/metricas.json` e os arquivos de spec referenciados, seguindo esta estrutura:
 

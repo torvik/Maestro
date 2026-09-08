@@ -3,7 +3,9 @@ description: Recupera blocos em_andamento após sessão interrompida — analisa
 argument-hint: [opcional: ID do bloco]
 ---
 
-Leia `plano/blocos.json` e identifique todos os blocos com `estado: "em_andamento"`.
+Se `$ARGUMENTS` contiver `--fase <nome>`: use `plano/<nome>/blocos.json` em vez de `plano/blocos.json`. Encerre com erro se o arquivo não existir.
+
+Leia `plano/blocos.json` (ou o caminho resolvido acima) e identifique todos os blocos com `estado: "em_andamento"`.
 
 Se $ARGUMENTS especifica um ID, foque nesse bloco. Caso contrário, liste todos os blocos em limbo.
 
