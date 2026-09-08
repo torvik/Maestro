@@ -72,11 +72,12 @@
       ],
       "comando_teste": "python scripts/verificar-repo.py --check portabilidade && python scripts/verificar-repo.py --check paridade",
       "orcamento_turnos": 30,
-      "estado": "pendente",
+      "estado": "concluido",
       "tentativas": 0,
       "bloqueado_por": null,
       "notas": [
-        "Escopo ampliado alem do enunciado original: 'python3' tambem quebra no Windows. Verificado em 2026-09-08 na maquina do dono: 'python3 --version' falha, 'python --version' retorna 3.14.3."
+        "Escopo ampliado alem do enunciado original: 'python3' tambem quebra no Windows. Verificado em 2026-09-08 na maquina do dono: 'python3 --version' falha, 'python --version' retorna 3.14.3.",
+        "Concluído em 2026-09-08 — implementado diretamente."
       ]
     },
     {
@@ -104,11 +105,12 @@
       ],
       "comando_teste": "python scripts/verificar-repo.py --check versao",
       "orcamento_turnos": 15,
-      "estado": "pendente",
+      "estado": "concluido",
       "tentativas": 0,
       "bloqueado_por": null,
       "notas": [
-        "Divergencia encontrada em 2026-09-08 durante o planejamento: .claude-plugin/plugin.json declara 1.1.0 enquanto CHANGELOG.md e VERSAO.md ja estao em 1.2.0."
+        "Divergencia encontrada em 2026-09-08 durante o planejamento: .claude-plugin/plugin.json declara 1.1.0 enquanto CHANGELOG.md e VERSAO.md ja estao em 1.2.0.",
+        "Concluído em 2026-09-08 — implementado diretamente."
       ]
     },
     {
@@ -135,10 +137,12 @@
       ],
       "comando_teste": "python scripts/verificar-repo.py --check paridade",
       "orcamento_turnos": 15,
-      "estado": "pendente",
+      "estado": "concluido",
       "tentativas": 0,
       "bloqueado_por": null,
-      "notas": []
+      "notas": [
+        "Concluído em 2026-09-08 — implementado diretamente."
+      ]
     },
     {
       "id": "F2-05",
