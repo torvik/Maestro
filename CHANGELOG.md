@@ -2,6 +2,11 @@
 
 Todas as mudanças relevantes do Maestro. Formato baseado em Keep a Changelog; numeração em versionamento semântico (ver `VERSAO.md`).
 
+## [1.1.1] — 2026-09-08
+
+### Corrigido
+- `/maestro:custos` falhava com "scripts/status.py não existe" em projetos reais. O comando agora tenta encontrar o script em múltiplos caminhos (repo, plugin local, cache global) e, se não achar, lê `plano/blocos.json` diretamente para calcular a distribuição.
+
 ## [1.0.0] — 2026-09-03
 
 Primeira versão pública.

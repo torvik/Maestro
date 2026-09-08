@@ -8,7 +8,7 @@ Plugin gratuito e aberto para [Claude Code](https://claude.com/code) que quebra 
 decide o quanto cada um é arriscado e manda cada um para o modelo certo — com critério de aceite
 verificável por teste, não por opinião do modelo.
 
-[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.1.0-blue)](plugins/maestro/CHANGELOG.md)
+[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.1.1-blue)](plugins/maestro/CHANGELOG.md)
 [![Licença](https://img.shields.io/badge/licença-MIT-lightgrey)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/requer-Claude%20Code-black)](https://claude.com/code)
 
@@ -171,7 +171,7 @@ maestro/
 ├── .claude-plugin/marketplace.json     ← usado pelo Claude Code para listar o plugin
 └── plugins/maestro/
     ├── agents/          seis agentes, cada um com o modelo fixado no papel
-    ├── commands/        os cinco comandos /maestro:*
+    ├── commands/        os seis comandos /maestro:*
     ├── skills/          o método: EARS, anatomia de spec, disciplina de execução
     ├── scripts/         status e validador — determinísticos, custo zero
     ├── README.md        referência técnica
