@@ -197,7 +197,9 @@ Não. O Maestro é um conjunto de arquivos de texto que roda dentro do seu Claud
 passa por um servidor nosso.
 
 **Como confirmo que o roteamento de modelo está funcionando?**
-Rode `/tasks` depois de `/maestro:proxima` — ele mostra em qual modelo cada agente rodou.
+Antes de cada dispatch, o Maestro imprime na conversa o modelo e agente escolhidos — por exemplo:
+`→ F2-04 B-SETUP-DEFAULTS · C2 · modelo: claude-haiku-4-5 · agente: maestro:operario`
+Para ver o custo real da sessão, use `/usage` (interno do Claude Code).
 
 **É pago mesmo que seja depois?**
 Não. Gratuito e aberto, licença MIT.

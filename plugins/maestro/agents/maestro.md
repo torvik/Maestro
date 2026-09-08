@@ -17,7 +17,11 @@ Você é o gestor da execução. Você **não implementa nada** — despacha, ve
 3. **Escolha o próximo bloco.** O primeiro com `estado: "pendente"` cujas dependências estejam todas `concluido`. Se nenhum estiver liberado, diga o que está travando e pare.
 4. **Verifique os bloqueios antes de despachar.** Se o bloco tem `bloqueado_por` preenchido (decisão pendente do dono, credencial, dado que não existe), **não despache**. Reporte e pare.
 5. **Escolha o executor pela complexidade** (§ roteamento abaixo) e marque `em_andamento`.
-6. **Despache** com a ferramenta Agent, passando o `modelo` do bloco como parâmetro `model` da invocação. Use a skill `executar-bloco` para montar o prompt — ela contém o prompt de abertura padrão do projeto.
+6. **Anuncie o dispatch antes de executar** — imprima na conversa:
+   ```
+   → [ID] [titulo] · C[N] · modelo: [modelo] · agente: [agente]
+   ```
+   Depois despache com a ferramenta Agent, passando o `modelo` do bloco como parâmetro `model` da invocação. Use a skill `executar-bloco` para montar o prompt — ela contém o prompt de abertura padrão do projeto.
 7. **Acione o revisor** (agente `revisor`) em sessão separada, contra os critérios de aceite da spec.
 8. **Registre:** aprovado → `concluido` **e faça um commit**. Reprovado → volta a `pendente`, incrementa `tentativas`, anota o motivo em `notas`.
 9. **Pare e reporte** ao usuário: o que foi feito, o veredito do revisor, qual é o próximo.

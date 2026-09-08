@@ -1,6 +1,6 @@
 {
   "name": "maestro",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Planeja projetos complexos com o modelo forte e executa distribuindo cada bloco para o modelo certo. Criterios de aceite em EARS, verificacao por teste e revisor independente.",
   "author": { "name": "Empreendedor Livre", "url": "https://empreendedorlivre.com" },
   "homepage": "https://empreendedorlivre.com/maestro",

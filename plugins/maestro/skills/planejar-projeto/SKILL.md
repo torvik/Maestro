@@ -74,4 +74,4 @@ Um estudo de 2026 sobre 138 repositórios reais encontrou que arquivos de instru
 Então: **não escreva "use código limpo", "siga boas práticas", "escreva testes"**. Isso ocupa atenção e não informa nada. Convenção de estilo é trabalho de linter, não de spec. Escreva só o que é específico deste bloco e que o executor não teria como adivinhar.
 
 ## Ao terminar
-Registre o bloco em `plano/blocos.json` (formato em `references/schema-blocos.md`) e encontre e rode `validar-plano.py` (tente: `scripts/validar-plano.py`, `.claude/plugins/maestro/scripts/validar-plano.py`, ou `find ~/.claude/plugins/cache/maestro -name "validar-plano.py" 2>/dev/null | head -1`).
+Registre o bloco em `plano/blocos.json` (formato em `references/schema-blocos.md`) e use a skill `maestro-runtime` para localizar e rodar `validar-plano.py`.

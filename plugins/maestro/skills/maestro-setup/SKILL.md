@@ -58,12 +58,33 @@ Só o que a detecção não respondeu:
 }
 ```
 
-E `plano/blocos.json` conforme `../planejar-projeto/references/schema-blocos.md`.
+E `plano/blocos.json` conforme `../planejar-projeto/references/schema-blocos.md`. Use este modelo para cada bloco — **todos os 14 campos são obrigatórios**. Se o usuário não informar `comando_teste`, pare e pergunte antes de gravar:
+
+```json
+{
+  "id": "F1-01",
+  "titulo": "<título curto>",
+  "spec": "specs/F1-01-<slug>.md",
+  "complexidade": "C3",
+  "modelo": "<leia de modelos[complexidade] no config acima>",
+  "agente": "implementador",
+  "revisor_modelo": "<leia de revisor_por_complexidade[complexidade] no config>",
+  "depende_de": [],
+  "arquivos_permitidos": ["src/**"],
+  "criterio_aceite": ["SE ... ENTÃO O SISTEMA DEVE ..."],
+  "estado": "pendente",
+  "comando_teste": "<comando que prova o bloco — obrigatório>",
+  "orcamento_turnos": 30,
+  "tentativas": 0,
+  "bloqueado_por": null,
+  "notas": []
+}
+```
 
 **Grave sempre o `maestro_versao`**, lendo do `plugin.json` instalado. É o que permite detectar depois que um plano antigo está rodando com um plugin de formato novo.
 
 ## Passo 4 — Validar e mostrar
-Encontre e rode `validar-plano.py` (tente: `scripts/validar-plano.py`, `.claude/plugins/maestro/scripts/validar-plano.py`, ou `find ~/.claude/plugins/cache/maestro -name "validar-plano.py" 2>/dev/null | head -1`). Depois encontre e rode `status.py` da mesma forma. Mostre o quadro e diga qual é o próximo bloco liberado.
+Use a skill `maestro-runtime` para localizar e rodar `validar-plano.py` e depois `status.py`. Mostre o quadro e diga qual é o próximo bloco liberado.
 
 ## Passo 5 — Fechar com as três ações
 - `/maestro:status` — ver onde está

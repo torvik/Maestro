@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maestro — o modelo caro planeja, o barato executa | Empreendedor Livre</title>
+<meta name="description" content="Plugin gratuito para Claude Code que quebra seu projeto em blocos e manda cada um para o modelo certo. Menos custo, mesma qualidade. Baixe grátis.">
+<meta property="og:title" content="Maestro — orquestre seus projetos no Claude Code">
+<meta property="og:description" content="O modelo caro planeja. O barato executa. Plugin gratuito para Claude Code.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night:#0E1116; --night-2:#171C24; --night-3:#242C37;
+    --paper:#FCFCFD; --paper-2:#F1F3F6;
+    --ink:#141A21; --ink-2:#4A5462; --ink-3:#79838F;
+    --mist:#D5DAE1;
+    --haiku:#0F7D5F; --sonnet:#2A5EDB; --opus:#A32C78;
+    --maxw:1140px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--paper);color:var(--ink);
+    font-family:'Instrument Sans',system-ui,sans-serif;font-size:17px;line-height:1.62;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px}
+  h1,h2,h3{font-family:'Bricolage Grotesque',system-ui,sans-serif;line-height:1.04;letter-spacing:-.025em;font-weight:800}
+  h1{font-size:clamp(2.7rem,6.4vw,4.9rem)}
+  h2{font-size:clamp(1.9rem,4vw,2.9rem);margin-bottom:.45em}
+  h3{font-size:1.08rem;font-weight:600;letter-spacing:-.012em;line-height:1.3}
+  p{max-width:64ch}
+  a{color:inherit}
+  code,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+  :focus-visible{outline:3px solid var(--sonnet);outline-offset:3px;border-radius:2px}
+
+  header{background:var(--night);border-bottom:1px solid var(--night-3)}
+  .bar{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:18px 0}
+  .brand{font-family:'Bricolage Grotesque';font-weight:800;font-size:1.2rem;color:#fff;text-decoration:none;letter-spacing:-.03em}
+  .brand em{font-style:normal;color:#7C8798;font-weight:600;font-size:.85rem;margin-left:9px}
+  .bar a.out{font-size:.9rem;color:#A8B2BF;text-decoration:none}
+  .bar a.out:hover{color:#fff}
+
+  .hero{background:var(--night);color:#fff;padding:76px 0 88px}
+  .tag{display:inline-flex;align-items:center;gap:8px;font-size:.82rem;font-weight:600;
+    color:#4FD1A5;border:1px solid #1E5A48;background:#0F2A22;border-radius:100px;padding:5px 13px;margin-bottom:26px}
+  .hero h1{max-width:15ch}
+  .hero .lead{font-size:1.19rem;color:#AEB8C6;margin-top:24px;max-width:54ch}
+  .cta{display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin-top:36px}
+  .btn{display:inline-block;background:#fff;color:var(--night);text-decoration:none;font-weight:600;
+    font-size:1rem;padding:15px 30px;border:none;border-radius:4px;cursor:pointer;
+    font-family:'Instrument Sans';transition:transform .12s ease,background .12s ease}
+  .btn:hover{background:#E4E8EE;transform:translateY(-1px)}
+  .cta small{color:#7C8798;font-size:.9rem}
+
+  .router{margin-top:64px;border:1px solid var(--night-3);border-radius:8px;background:var(--night-2);overflow:hidden}
+  .router-top{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;
+    padding:16px 24px;border-bottom:1px solid var(--night-3);font-size:.88rem;color:#8B96A5}
+  .router-top b{color:#fff;font-weight:600}
+  .row{display:grid;grid-template-columns:168px 1fr 132px;gap:28px;align-items:center;
+    padding:22px 24px;border-bottom:1px solid var(--night-3)}
+  .row:last-child{border-bottom:none}
+  .who{display:flex;flex-direction:column;gap:3px}
+  .who b{font-family:'Bricolage Grotesque';font-size:1.06rem;font-weight:800;letter-spacing:-.02em}
+  .who span{font-size:.79rem;color:#7C8798;font-family:'IBM Plex Mono'}
+  .h .who b{color:#3FBE95} .s .who b{color:#7FA5F5} .o .who b{color:#E68CC4}
+  .what{color:#C3CBD6;font-size:.97rem;line-height:1.5;max-width:none}
+  .weight{text-align:right}
+  .wbar{height:8px;background:#2B3441;border-radius:100px;overflow:hidden;margin-bottom:7px}
+  .wfill{height:100%;border-radius:100px}
+  .h .wfill{background:#3FBE95} .s .wfill{background:#5B89EE} .o .wfill{background:#D96BB4}
+  .weight span{font-size:.78rem;color:#7C8798;font-family:'IBM Plex Mono'}
+
+  section{padding:88px 0;border-top:1px solid var(--mist)}
+  .sec-lead{color:var(--ink-2);font-size:1.06rem;margin-bottom:44px;max-width:60ch}
+
+  .cost{display:grid;grid-template-columns:1.15fr .85fr;gap:60px;align-items:start}
+  .cbar{margin-bottom:26px}
+  .cbar .cl{display:flex;justify-content:space-between;align-items:baseline;gap:16px;margin-bottom:9px}
+  .cbar .cl span{color:var(--ink-2);font-size:.96rem}
+  .cbar .cl b{font-family:'Bricolage Grotesque';font-size:1.5rem;font-weight:800;letter-spacing:-.03em}
+  .ctrack{height:34px;background:var(--paper-2);border-radius:4px;overflow:hidden;display:flex}
+  .cfill{height:100%}
+  .fo{background:var(--opus)} .fs{background:var(--sonnet)} .fh{background:var(--haiku)}
+  .keys{display:flex;gap:22px;flex-wrap:wrap;font-size:.88rem;color:var(--ink-2);margin-top:14px}
+  .keys i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:7px}
+
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:44px;counter-reset:s}
+  .step{counter-increment:s;border-top:2px solid var(--ink);padding-top:18px}
+  .step::before{content:"Passo " counter(s);display:block;font-family:'IBM Plex Mono';font-size:.78rem;
+    color:var(--ink-3);margin-bottom:14px}
+  .step h3{margin-bottom:10px}
+  .step p{font-size:.96rem;color:var(--ink-2)}
+
+  .cmds{border:1px solid var(--mist);border-radius:8px;overflow:hidden;background:#fff}
+  .cmd{display:grid;grid-template-columns:230px 1fr;gap:24px;padding:18px 26px;
+    border-top:1px solid var(--paper-2);align-items:baseline}
+  .cmd:first-child{border-top:none}
+  .cmd .mono{font-weight:500;font-size:.94rem;color:var(--ink)}
+  .cmd p{color:var(--ink-2);font-size:.96rem;max-width:none}
+
+  .rails{display:grid;grid-template-columns:1fr 1fr;gap:0 56px}
+  .rail{padding:24px 0;border-top:1px solid var(--mist)}
+  .rail h3{margin-bottom:7px}
+  .rail p{font-size:.95rem;color:var(--ink-2)}
+
+  .grab{background:var(--night);color:#fff;border-radius:10px;padding:56px}
+  .grab h2{color:#fff}
+  .grab>p{color:#AEB8C6}
+  .form{display:grid;gap:16px;max-width:440px;margin-top:30px}
+  .form label{font-size:.86rem;color:#AEB8C6;display:block;margin-bottom:6px}
+  .form input[type=text],.form input[type=email]{width:100%;padding:14px 15px;border:1px solid var(--night-3);
+    background:var(--night-2);color:#fff;border-radius:4px;font-family:'Instrument Sans';font-size:1rem}
+  .form input::placeholder{color:#68717F}
+  .form .btn{width:100%}
+  .consent{display:flex;gap:11px;align-items:flex-start;font-size:.85rem;color:#AEB8C6;line-height:1.5}
+  .consent input{width:auto;margin-top:4px;flex-shrink:0}
+  .fine{font-size:.81rem;color:#68717F}
+  .form.off{display:none}
+  .done{display:none;margin-top:30px}
+  .done.on{display:block}
+  .codebox{background:#070A0E;border:1px solid var(--night-3);border-radius:6px;padding:20px;
+    font-family:'IBM Plex Mono';font-size:.87rem;color:#D5DCE6;overflow-x:auto;line-height:2}
+  .codebox .c{color:#68717F}
+  .copy{background:transparent;color:#AEB8C6;border:1px solid var(--night-3);border-radius:4px;
+    padding:9px 16px;font-size:.86rem;cursor:pointer;margin-top:14px;font-family:'Instrument Sans'}
+  .copy:hover{color:#fff;border-color:#68717F}
+
+  .pats{display:grid;grid-template-columns:1fr 1fr;gap:0 56px}
+  .pat{padding:26px 0;border-top:1px solid var(--mist)}
+  .pat .pn{font-family:'IBM Plex Mono';font-size:.75rem;color:var(--ink-3);display:block;margin-bottom:9px}
+  .pat h3{margin-bottom:8px}
+  .pat p{font-size:.95rem;color:var(--ink-2)}
+  .snippet{background:var(--night);border-radius:8px;padding:26px 28px;margin:36px 0 8px;
+    font-family:'IBM Plex Mono';font-size:.87rem;line-height:1.85;color:#D5DCE6;overflow-x:auto}
+  .snippet .kw{color:#7FA5F5;font-weight:500}
+  .snippet .no{color:#E68CC4}
+  .snippet .ok{color:#3FBE95}
+  .snippet .cm{color:#68717F}
+  .cap{font-size:.88rem;color:var(--ink-3);max-width:60ch}
+  .verline{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.85rem;color:#7C8798;margin-top:24px}
+  .vpill{font-family:'IBM Plex Mono';font-size:.78rem;color:#AEB8C6;border:1px solid var(--night-3);
+    border-radius:100px;padding:3px 11px}
+  details{border-top:1px solid var(--mist);padding:20px 0}
+  summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:20px;font-size:1.02rem}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"+";color:var(--ink-3);font-family:'IBM Plex Mono';font-size:1.2rem;flex-shrink:0;line-height:1}
+  details[open] summary::after{content:"–"}
+  details p{margin-top:14px;color:var(--ink-2);font-size:.97rem}
+
+  footer{background:var(--night);color:#7C8798;padding:44px 0;font-size:.89rem}
+  footer a{color:#AEB8C6}
+
+  @media (max-width:900px){
+    .cost,.rails,.pats{grid-template-columns:1fr;gap:40px 0}
+    .steps{grid-template-columns:1fr;gap:32px}
+    .row{grid-template-columns:1fr;gap:12px;padding:20px}
+    .weight{text-align:left;max-width:200px}
+    .cmd{grid-template-columns:1fr;gap:6px}
+    .grab{padding:32px 24px}
+    .hero{padding:56px 0 64px}
+    section{padding:60px 0}
+    .router{margin-top:44px}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="#">Maestro<em>Empreendedor Livre</em></a>
+    <a class="out" href="https://empreendedorlivre.com/">empreendedorlivre.com</a>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <span class="tag">Gratuito e aberto</span>
+    <h1>O modelo caro planeja. O barato executa.</h1>
+    <p class="lead">O Maestro quebra o seu projeto em blocos, decide o quanto cada um é arriscado e manda cada bloco para o modelo certo. Você acompanha por cinco comandos dentro do Claude Code.</p>
+    <div class="cta">
+      <a class="btn" href="#baixar">Baixar o Maestro</a>
+      <small>Funciona com o Claude Code em qualquer plano pago</small>
+    </div>
+    <div class="verline">
+      <span class="vpill">versão 1.2.0</span>
+      <span>Código aberto, licença MIT. Atualizações contínuas com registro de mudanças.</span>
+    </div>
+
+    <div class="router">
+      <div class="router-top">
+        <span>Para onde vai cada tipo de trabalho</span>
+        <span><b>Você define uma vez.</b> O Maestro respeita em todo bloco.</span>
+      </div>
+
+      <div class="row h">
+        <div class="who"><b>Haiku 4.5</b><span>complexidade 1–2</span></div>
+        <p class="what">Trabalho mecânico, sem decisão: código repetitivo, migrações a partir de um schema pronto, dados de teste, conversões, renomeações em massa, documentação.</p>
+        <div class="weight"><div class="wbar"><div class="wfill" style="width:20%"></div></div><span>1× o custo</span></div>
+      </div>
+
+      <div class="row s">
+        <div class="who"><b>Sonnet 5</b><span>complexidade 3–4</span></div>
+        <p class="what">O grosso da construção: regras de negócio, integrações documentadas, funcionalidades novas, casos de borda já mapeados e a revisão do que foi entregue.</p>
+        <div class="weight"><div class="wbar"><div class="wfill" style="width:40%"></div></div><span>2× o custo</span></div>
+      </div>
+
+      <div class="row o">
+        <div class="who"><b>Opus 5</b><span>complexidade 4–5</span></div>
+        <p class="what">Onde errar sai caro: arquitetura, contratos entre partes do sistema, modelagem de dados e qualquer decisão difícil de voltar atrás depois.</p>
+        <div class="weight"><div class="wbar"><div class="wfill" style="width:100%"></div></div><span>5× o custo</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <h2>Rodar tudo no modelo mais forte custa várias vezes mais</h2>
+    <p class="sec-lead">E não entrega melhor. A maior parte do trabalho de um projeto é rotina — não precisa do modelo de raciocínio mais caro. O Maestro classifica cada bloco e usa o mais barato que dá conta dele.</p>
+
+    <div class="cost">
+      <div>
+        <div class="cbar">
+          <div class="cl"><span>Tudo no modelo mais forte</span><b>100%</b></div>
+          <div class="ctrack"><div class="cfill fo" style="width:100%"></div></div>
+        </div>
+        <div class="cbar">
+          <div class="cl"><span>Distribuído por complexidade</span><b>cerca de 1/4</b></div>
+          <div class="ctrack">
+            <div class="cfill fo" style="width:15%"></div>
+            <div class="cfill fs" style="width:60%"></div>
+            <div class="cfill fh" style="width:25%"></div>
+          </div>
+          <div class="keys">
+            <span><i class="fo"></i>Opus 15%</span>
+            <span><i class="fs"></i>Sonnet 60%</span>
+            <span><i class="fh"></i>Haiku 25%</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p>Essa é uma divisão saudável do trabalho. O Maestro mede a sua e avisa quando o modelo caro passa de um quarto do custo — o que quase sempre significa que uma especificação ficou ambígua e alguém subiu de modelo por reflexo, em vez de corrigir o texto.</p>
+        <p style="margin-top:18px;color:var(--ink-3);font-size:.9rem">Proporção baseada nos preços de API de setembro de 2026. O ganho real depende da mistura de tarefas do seu projeto.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Como funciona</h2>
+    <p class="sec-lead">A parte cara acontece uma vez. A barata se repete até o projeto acabar.</p>
+    <div class="steps">
+      <div class="step">
+        <h3>Planejar com o modelo forte</h3>
+        <p>Ele escreve as especificações, quebra o projeto em blocos e define para cada um: a complexidade, o modelo, os arquivos que pode tocar e como saber que ficou pronto.</p>
+      </div>
+      <div class="step">
+        <h3>Você lê e aprova</h3>
+        <p>O plano vira um arquivo que você corrige antes de qualquer linha ser escrita. É o único momento em que um erro ainda sai de graça.</p>
+      </div>
+      <div class="step">
+        <h3>Executar com o modelo certo</h3>
+        <p>O gestor pega o próximo bloco liberado, manda para o modelo que o plano definiu, chama um revisor que não pode editar nada e só então marca como concluído.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section>
+  <div class="wrap">
+    <h2>Os padrões que ele aplica</h2>
+    <p class="sec-lead">Delegar trabalho a um modelo mais barato só funciona com método. Estes são os padrões que a engenharia com agentes consolidou — e que vêm embutidos, sem você precisar configurar nada.</p>
+
+    <div class="snippet">
+<span class="cm"># Critério de aceite comum — o modelo interpreta como quiser</span><br>
+<span class="no">"O sistema deve tratar erros adequadamente"</span><br><br>
+<span class="cm"># O mesmo critério em EARS — vira teste direto</span><br>
+<span class="ok">SE</span> o banco estiver indisponível<br>
+<span class="ok">ENTÃO O SISTEMA DEVE</span> responder 503 e registrar o erro.
+    </div>
+    <p class="cap">Um critério escrito assim vira um caso de teste quase um para um. É o que faz a especificação valer como contrato, em vez de conselho.</p>
+
+    <div class="pats" style="margin-top:52px">
+      <div class="pat">
+        <span class="pn">especificação</span>
+        <h3>Critérios em notação EARS</h3>
+        <p>Padrão vindo da indústria aeroespacial. Cada critério tem sujeito explícito, número no lugar de adjetivo e um único comportamento observável. Se não dá para escrever a asserção do teste, o critério ainda está vago.</p>
+      </div>
+      <div class="pat">
+        <span class="pn">verificação</span>
+        <h3>Teste antes do código</h3>
+        <p>Como cada critério já é um teste, o executor escreve os testes primeiro, vê falhar e implementa até passarem. Teste verde é o único sinal objetivo de pronto — sem ele, pronto é opinião do modelo.</p>
+      </div>
+      <div class="pat">
+        <span class="pn">contexto</span>
+        <h3>Uma tarefa por sessão</h3>
+        <p>Cada bloco roda isolado, recebendo só a sua especificação e os arquivos que ele pode tocar. Janela cheia degrada de forma previsível: o modelo perde justamente o que está no meio.</p>
+      </div>
+      <div class="pat">
+        <span class="pn">continuidade</span>
+        <h3>Checkpoint a cada bloco</h3>
+        <p>Sessão longa é compactada e o detalhe se perde. Um commit por bloco concluído, mais o arquivo de progresso, reconstroem o estado sem depender da memória da conversa.</p>
+      </div>
+      <div class="pat">
+        <span class="pn">custo</span>
+        <h3>Orçamento por tarefa</h3>
+        <p>Cada bloco tem um limite de rodadas. Estourar não é sinal de modelo fraco — é sinal de especificação ambígua. O sistema para e devolve, em vez de encarecer o mesmo erro.</p>
+      </div>
+      <div class="pat">
+        <span class="pn">restrição</span>
+        <h3>Nada de conselho genérico</h3>
+        <p>Um estudo de 2026 sobre 138 repositórios reais mostrou que arquivos de instrução gerados por modelo pioraram o desempenho dos agentes. Aqui, "use código limpo" é proibido: estilo é trabalho de linter, não de contexto.</p>
+      </div>
+      <div class="pat">
+        <span class="pn">planejamento</span>
+        <h3>Trabalho difícil vira dois blocos</h3>
+        <p>Tarefa de design incerto é dividida: o modelo forte desenha e escreve a especificação; o médio implementa. Mandar a tarefa inteira para o modelo forte é o que mais infla custo sem melhorar nada.</p>
+      </div>
+      <div class="pat">
+        <span class="pn">revisão</span>
+        <h3>Quem escreve não aprova</h3>
+        <p>O revisor roda em sessão separada e sem permissão de editar arquivo. Ele confere critério por critério, com evidência, e ainda procura o teste que passa sem exercitar nada.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Oito comandos</h2>
+    <p class="sec-lead">Sem configuração manual. O setup conversa com você, lê o que já existe no repositório e monta o plano sozinho.</p>
+    <div class="cmds">
+      <div class="cmd"><span class="mono">/maestro:setup</span><p>Detecta o que já existe, faz até seis perguntas e gera o plano</p></div>
+      <div class="cmd"><span class="mono">/maestro:status</span><p>Mostra o quadro e a distribuição por modelo. Roda na sua máquina, sem consumir nada</p></div>
+      <div class="cmd"><span class="mono">/maestro:proxima</span><p>Executa o próximo bloco liberado e chama o revisor. Use <code>--dry-run</code> para ver o que seria executado sem despachar nada</p></div>
+      <div class="cmd"><span class="mono">/maestro:planejar</span><p>Escreve a especificação de um bloco novo com o modelo forte</p></div>
+      <div class="cmd"><span class="mono">/maestro:replanejar</span><p>Ajusta o plano quando a realidade muda</p></div>
+      <div class="cmd"><span class="mono">/maestro:custos</span><p>Mostra a distribuição planejada por modelo e lembra quando checar <code>/context</code> e <code>/usage</code>, os comandos nativos de custo do Claude Code</p></div>
+      <div class="cmd"><span class="mono">/maestro:retomar</span><p>Recupera blocos interrompidos por crash ou compactação de sessão — analisa o git e oferece retomar, resetar ou descartar</p></div>
+      <div class="cmd"><span class="mono">/maestro:revisar</span><p>Revisão de auditoria de qualquer bloco concluído, independente do fluxo de execução</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>O que ele impede</h2>
+    <p class="sec-lead">Entregar trabalho a um modelo barato só funciona com trilhos. Estes são verificados antes de qualquer bloco ser despachado.</p>
+    <div class="rails">
+      <div class="rail">
+        <h3>Tarefa crítica não cai no modelo barato</h3>
+        <p>Blocos onde o erro é irreversível ficam presos ao modelo forte — tanto para executar quanto para revisar.</p>
+      </div>
+      <div class="rail">
+        <h3>Quem escreve não aprova</h3>
+        <p>O revisor roda em sessão separada e sem permissão de editar arquivo. Ele aprova ou reprova, com a evidência de cada critério.</p>
+      </div>
+      <div class="rail">
+        <h3>Bloco sem informação não é despachado</h3>
+        <p>Se falta uma decisão sua, uma credencial ou um dado, o bloco fica marcado como travado — em vez de o modelo preencher o buraco por conta própria.</p>
+      </div>
+      <div class="rail">
+        <h3>Falhou duas vezes? Corrige o texto, não o modelo</h3>
+        <p>Quando o mesmo bloco falha de novo, a causa quase sempre é uma especificação ambígua. Subir de modelo só encareceria o mesmo erro.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="baixar">
+  <div class="wrap">
+    <div class="grab">
+      <h2>Baixe o Maestro</h2>
+      <p>Deixe seu e-mail e os comandos de instalação aparecem aqui na hora. Sem custo, sem cartão.</p>
+
+      <form class="form" id="leadForm" novalidate>
+        <div>
+          <label for="nome">Nome</label>
+          <input type="text" id="nome" name="nome" placeholder="Como te chamamos" required>
+        </div>
+        <div>
+          <label for="email">E-mail</label>
+          <input type="email" id="email" name="email" placeholder="voce@email.com" required>
+        </div>
+        <label class="consent">
+          <input type="checkbox" id="ok" required>
+          <span>Quero receber o link e novidades sobre IA e automação do Empreendedor Livre. Posso sair quando quiser.</span>
+        </label>
+        <button class="btn" type="submit">Liberar o download</button>
+        <p class="fine">Seus dados ficam com a gente e não são vendidos.</p>
+      </form>
+
+      <div class="done" id="done">
+        <p style="color:#fff;font-weight:600;margin-bottom:12px">Pronto. Rode no terminal, dentro do seu projeto:</p>
+        <div class="codebox">
+<span class="c"># 1. adicione o repositório</span><br>
+/plugin marketplace add <span id="repoInline">SEU-USUARIO/maestro</span><br><br>
+<span class="c"># 2. instale</span><br>
+/plugin install maestro@maestro<br><br>
+<span class="c"># 3. configure (ele conversa com você)</span><br>
+/maestro:setup
+        </div>
+        <button class="copy" id="copyBtn">Copiar comandos</button>
+        <p style="margin-top:18px;color:#AEB8C6"><a href="#" id="repoLink" style="color:#fff">Ver no GitHub</a> — código aberto, sem servidor no meio.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Perguntas</h2>
+    <details>
+      <summary>Preciso de quê para usar?</summary>
+      <p>Do Claude Code em qualquer plano pago, e de um projeto onde você já trabalha. O Maestro não é um serviço à parte: roda dentro do Claude Code, na sua conta. Funciona no terminal, no VS Code, no JetBrains e no aplicativo de computador.</p>
+    </details>
+    <details>
+      <summary>Serve para projeto que não é de programação?</summary>
+      <p>Serve, desde que o trabalho possa ser quebrado em blocos com um jeito objetivo de dizer que está pronto. Pesquisa, produção de conteúdo em série e migração de dados funcionam bem. O que não encaixa é trabalho onde "pronto" é questão de gosto.</p>
+    </details>
+    <details>
+      <summary>Ele gasta a minha franquia do Claude?</summary>
+      <p>Gasta, porque quem executa é o Claude Code com a sua conta. A questão é quanto: usar o modelo certo para cada tipo de tarefa faz a mesma construção consumir bem menos do seu limite.</p>
+    </details>
+    <details>
+      <summary>Meu código sai da minha máquina?</summary>
+      <p>Não passa por nenhum servidor nosso. O Maestro é um conjunto de arquivos de texto que roda dentro do seu Claude Code. Não coletamos nada do seu projeto.</p>
+    </details>
+    <details>
+      <summary>Posso mudar as regras?</summary>
+      <p>Pode. Tudo são arquivos de texto no seu repositório: os agentes, os comandos e o plano. Edite à vontade, inclusive quais modelos entram em cada nível de complexidade.</p>
+    </details>
+    <details>
+      <summary>É gratuito mesmo, ou vira pago depois?</summary>
+      <p>É gratuito e aberto. Se quiser retribuir, use e conte o que funcionou e o que quebrou — é isso que melhora a próxima versão.</p>
+    </details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Maestro — um projeto do <a href="https://empreendedorlivre.com/">Empreendedor Livre</a>.
+    Claude e Claude Code são produtos da Anthropic; este projeto não tem relação de parceria com ela.
+  </div>
+</footer>
+
+<script>
+(function(){
+  var form = document.getElementById('leadForm');
+  var done = document.getElementById('done');
+
+  /* ========= CONFIGURE AQUI =========
+     Cole o endpoint do seu serviço de formulário (Formspree, Brevo, Mailchimp,
+     Google Forms ou um webhook do WordPress). Vazio = só libera o link, sem salvar. */
+  var ENDPOINT = 'https://formspree.io/f/xqpkglra';
+  var REPO = 'torvik/Maestro';
+  /* ================================== */
+
+  // Preenche o comando exibido e o link "Ver no GitHub" a partir da mesma
+  // variável REPO acima — nunca mais fica um texto fixo desatualizado.
+  document.getElementById('repoInline').textContent = REPO;
+  document.getElementById('repoLink').href = 'https://github.com/' + REPO;
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var nome = document.getElementById('nome').value.trim();
+    var email = document.getElementById('email').value.trim();
+    if(!nome || !email || email.indexOf('@') < 1 || !document.getElementById('ok').checked){
+      alert('Preencha nome, um e-mail válido e marque a autorização.');
+      return;
+    }
+    var reveal = function(){
+      form.classList.add('off');
+      done.classList.add('on');
+      done.scrollIntoView({block:'center'});
+    };
+    if(ENDPOINT){
+      fetch(ENDPOINT,{method:'POST',
+        headers:{'Content-Type':'application/json','Accept':'application/json'},
+        body:JSON.stringify({nome:nome,email:email,origem:'landing-maestro'})
+      }).then(reveal).catch(reveal);
+    } else { reveal(); }
+  });
+
+  document.getElementById('copyBtn').addEventListener('click', function(){
+    var t = '/plugin marketplace add ' + REPO + '\n/plugin install maestro@maestro\n/maestro:setup';
+    navigator.clipboard.writeText(t).then(function(){
+      var b = document.getElementById('copyBtn');
+      b.textContent = 'Copiado';
+      setTimeout(function(){ b.textContent = 'Copiar comandos'; }, 1800);
+    });
+  });
+})();
+</script>
+</body>
+</html>

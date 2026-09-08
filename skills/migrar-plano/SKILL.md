@@ -29,8 +29,8 @@ Para cada campo adicionado na nova versão MAIOR que não existe no bloco:
 
 ## Ao terminar
 
-1. Atualize `maestro_versao` em `maestro.config.json` para a versão instalada (leia de `.claude-plugin/plugin.json` ou de `find ~/.claude/plugins/cache/maestro -name "plugin.json" 2>/dev/null | head -1`).
-2. Encontre e rode `validar-plano.py` (mesma estratégia de caminhos do `/maestro:status`).
+1. Atualize `maestro_versao` em `maestro.config.json` para a versão instalada (leia de `.claude-plugin/plugin.json` — use a skill `maestro-runtime` procedimento `localizar` se necessário).
+2. Use a skill `maestro-runtime` para localizar e rodar `validar-plano.py`.
 3. Se houver ERROs: mostre ao usuário e aguarde correção antes de continuar.
 4. Se houver só AVISOs: mostre e pergunte se o usuário quer continuar.
 5. Faça um commit: `git commit -m "migração: plano atualizado para vX"`.
