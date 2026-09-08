@@ -52,6 +52,18 @@ Fonte de verdade do estado da execução. Só o agente `maestro` escreve aqui.
 | `bloqueado_por` | não | Texto. Preenchido = **nunca despachar** |
 | `notas` | não | Histórico de falhas e decisões |
 
+## Bloqueio: `estado` vs `bloqueado_por`
+
+`bloqueado_por` preenchido impede o despacho mesmo com `estado: "pendente"`. `estado: "bloqueado"` sem `bloqueado_por` é inválido — corrija antes do despacho. Use `/maestro:destravar <ID>` para limpar.
+
+| Situação | `estado` | `bloqueado_por` | Efeito |
+|---|---|---|---|
+| Liberado | `pendente` | `null` | Despachável |
+| Travado com motivo | `pendente` | texto | **Nunca despachar** |
+| Estado inválido | `bloqueado` | `null` | Corrigir antes do despacho |
+| Em execução | `em_andamento` | `null` | `/maestro:retomar` |
+| Fechado | `concluido` | `null` | — |
+
 ## Regras invioláveis
 1. Bloco **C5 nunca** recebe modelo Haiku, nem para executar, nem para revisar.
 2. `revisor_modelo` é sempre igual ou superior ao `modelo`.
