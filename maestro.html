@@ -185,7 +185,7 @@
       <small>Funciona com o Claude Code em qualquer plano pago</small>
     </div>
     <div class="verline">
-      <span class="vpill">versão 1.2.0</span>
+      <span class="vpill">versão 1.3.0</span>
       <span>Código aberto, licença MIT. Atualizações contínuas com registro de mudanças.</span>
     </div>
 
@@ -326,23 +326,37 @@
         <h3>Quem escreve não aprova</h3>
         <p>O revisor roda em sessão separada e sem permissão de editar arquivo. Ele confere critério por critério, com evidência, e ainda procura o teste que passa sem exercitar nada.</p>
       </div>
+      <div class="pat">
+        <span class="pn">escala</span>
+        <h3>Fases independentes no mesmo projeto</h3>
+        <p>Com <code>--fase &lt;nome&gt;</code>, cada fase do projeto tem o seu próprio plano em <code>plano/&lt;nome&gt;/</code>. Planos antigos continuam funcionando sem migração — basta não passar o argumento.</p>
+      </div>
+      <div class="pat">
+        <span class="pn">velocidade</span>
+        <h3>Dois blocos ao mesmo tempo — só quando é seguro</h3>
+        <p><code>--paralelo</code> despacha um lote quando nenhum bloco depende do outro e os arquivos que cada um pode tocar são comprovadamente disjuntos. Em qualquer ambiguidade, serializa. Commits sempre um por vez.</p>
+      </div>
     </div>
   </div>
 </section>
 
 <section>
   <div class="wrap">
-    <h2>Oito comandos</h2>
+    <h2>Doze comandos</h2>
     <p class="sec-lead">Sem configuração manual. O setup conversa com você, lê o que já existe no repositório e monta o plano sozinho.</p>
     <div class="cmds">
-      <div class="cmd"><span class="mono">/maestro:setup</span><p>Detecta o que já existe, faz até seis perguntas e gera o plano</p></div>
-      <div class="cmd"><span class="mono">/maestro:status</span><p>Mostra o quadro e a distribuição por modelo. Roda na sua máquina, sem consumir nada</p></div>
-      <div class="cmd"><span class="mono">/maestro:proxima</span><p>Executa o próximo bloco liberado e chama o revisor. Use <code>--dry-run</code> para ver o que seria executado sem despachar nada</p></div>
+      <div class="cmd"><span class="mono">/maestro:setup</span><p>Detecta o que já existe, faz até seis perguntas e gera o plano. Com <code>--fase &lt;nome&gt;</code> cria um plano paralelo sem tocar no existente</p></div>
+      <div class="cmd"><span class="mono">/maestro:status</span><p>Mostra o quadro e a distribuição por modelo. <code>--bloco &lt;ID&gt;</code> exibe todos os detalhes e o histórico de métricas do bloco. Roda na sua máquina, sem consumir nada</p></div>
+      <div class="cmd"><span class="mono">/maestro:proxima</span><p>Executa o próximo bloco liberado e chama o revisor. <code>--dry-run</code> mostra sem despachar; <code>--paralelo</code> despacha até dois blocos ao mesmo tempo quando não há conflito de arquivo</p></div>
       <div class="cmd"><span class="mono">/maestro:planejar</span><p>Escreve a especificação de um bloco novo com o modelo forte</p></div>
       <div class="cmd"><span class="mono">/maestro:replanejar</span><p>Ajusta o plano quando a realidade muda</p></div>
       <div class="cmd"><span class="mono">/maestro:custos</span><p>Mostra a distribuição planejada por modelo e lembra quando checar <code>/context</code> e <code>/usage</code>, os comandos nativos de custo do Claude Code</p></div>
       <div class="cmd"><span class="mono">/maestro:retomar</span><p>Recupera blocos interrompidos por crash ou compactação de sessão — analisa o git e oferece retomar, resetar ou descartar</p></div>
-      <div class="cmd"><span class="mono">/maestro:revisar</span><p>Revisão de auditoria de qualquer bloco concluído, independente do fluxo de execução</p></div>
+      <div class="cmd"><span class="mono">/maestro:revisar &lt;ID&gt;</span><p>Revisão de auditoria de qualquer bloco concluído, independente do fluxo de execução</p></div>
+      <div class="cmd"><span class="mono">/maestro:destravar &lt;ID&gt;</span><p>Limpa o bloqueio de um bloco sem editar JSON manualmente. Exige confirmação explícita antes de gravar</p></div>
+      <div class="cmd"><span class="mono">/maestro:editar &lt;ID&gt;</span><p>Ajuste pontual na especificação de um bloco, ou regeração completa com o modelo forte. Valida o plano ao final</p></div>
+      <div class="cmd"><span class="mono">/maestro:rollback &lt;ID&gt;</span><p>Desfaz um bloco aprovado usando <code>git revert</code> — nunca <code>git reset</code>. Verifica árvore limpa antes de tocar em qualquer coisa</p></div>
+      <div class="cmd"><span class="mono">/maestro:exportar</span><p>Gera <code>plano/RELATORIO.md</code> com o estado completo, especificações e métricas. Pronto para compartilhar com o time</p></div>
     </div>
   </div>
 </section>
