@@ -8,7 +8,7 @@ Plugin gratuito e aberto para [Claude Code](https://claude.com/code) que quebra 
 decide o quanto cada um é arriscado e manda cada um para o modelo certo — com critério de aceite
 verificável por teste, não por opinião do modelo.
 
-[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.2.0-blue)](plugins/maestro/CHANGELOG.md)
+[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.3.0-blue)](plugins/maestro/CHANGELOG.md)
 [![Licença](https://img.shields.io/badge/licença-MIT-lightgrey)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/requer-Claude%20Code-black)](https://claude.com/code)
 
@@ -76,15 +76,20 @@ Guias completos:
 
 | Comando | O que faz |
 |---|---|
-| `/maestro:setup` | Detecta o que já existe no repositório, faz até 6 perguntas e gera o plano |
-| `/maestro:status` | Mostra o quadro — concluído, liberado, travado — e a distribuição por modelo. Roda local, custo zero |
-| `/maestro:proxima` | Executa o próximo bloco liberado no modelo certo e chama o revisor |
+| `/maestro:setup` | Detecta o que já existe no repositório, faz até 6 perguntas e gera o plano. `--fase <nome>` cria um plano de fase separado |
+| `/maestro:status` | Mostra o quadro — concluído, liberado, travado — e a distribuição por modelo. `--bloco <ID>` exibe detalhe completo do bloco |
+| `/maestro:proxima` | Executa o próximo bloco no modelo certo e chama o revisor. `--dry-run` mostra sem despachar; `--paralelo` despacha lote de blocos simultâneos |
 | `/maestro:planejar` | Escreve a especificação de um bloco novo, com o modelo forte |
 | `/maestro:replanejar` | Ajusta o plano quando a realidade muda |
 | `/maestro:custos` | Distribuição planejada por modelo + lembrete dos comandos nativos `/context` e `/usage` |
 | `/maestro:retomar` | Recupera blocos interrompidos (`em_andamento`) após crash ou compactação de sessão |
 | `/maestro:revisar <ID>` | Revisão de auditoria de qualquer bloco, independente do fluxo de execução |
-| `/maestro:proxima --dry-run` | Mostra qual bloco seria executado sem despachar nada |
+| `/maestro:destravar <ID>` | Limpa o bloqueio de um bloco sem editar JSON. Exige confirmação explícita |
+| `/maestro:editar <ID>` | Ajuste pontual ou regeração completa da spec de um bloco pelo arquiteto |
+| `/maestro:rollback <ID>` | Desfaz um bloco aprovado com `git revert`. Nunca `git reset`. Exige árvore limpa |
+| `/maestro:exportar` | Gera `plano/RELATORIO.md` com estado, specs e métricas — pronto para compartilhar |
+
+Todos os comandos aceitam `--fase <nome>` para operar em `plano/<nome>/blocos.json`. Planos legados continuam funcionando sem o argumento.
 
 ## Padrões aplicados
 
@@ -158,6 +163,22 @@ O revisor roda em sessão separada, sem permissão de editar arquivo. Confere cr
 critério com evidência — e procura especificamente o teste que passa sem exercitar nada.
 </details>
 
+<details>
+<summary><b>Fases independentes no mesmo projeto</b></summary><br>
+
+Com `--fase <nome>` cada fase tem o seu próprio `plano/<nome>/blocos.json`. Planos antigos
+continuam funcionando sem argumento e sem migração — retrocompatibilidade é regra dura.
+</details>
+
+<details>
+<summary><b>Dois blocos ao mesmo tempo — só quando é seguro</b></summary><br>
+
+`--paralelo` usa `scripts/paralelo.py` para verificar o predicado de seis condições: nenhum
+depende do outro (transitivo), ambos `pendente`, nenhum bloqueado, nenhum C5, conjuntos de
+arquivos provadamente disjuntos, nenhum em andamento. Em qualquer ambiguidade, serializa.
+Commits sempre um por vez.
+</details>
+
 ## O que ele impede
 
 - **Bloco crítico não cai no modelo barato.** Onde o erro é irreversível, o modelo forte
@@ -174,12 +195,12 @@ maestro/
 ├── .claude-plugin/marketplace.json     ← usado pelo Claude Code para listar o plugin
 └── plugins/maestro/
     ├── agents/          seis agentes, cada um com o modelo fixado no papel
-    ├── commands/        os seis comandos /maestro:*
+    ├── commands/        doze comandos /maestro:*
     ├── skills/          o método: EARS, anatomia de spec, disciplina de execução
-    ├── scripts/         status e validador — determinísticos, custo zero
+    ├── scripts/         status, validador, exportador, paralelo — determinísticos, custo zero
     ├── README.md        referência técnica
-    ├── CHANGELOG.md      o que mudou em cada versão
-    └── VERSAO.md         política de versionamento semântico
+    ├── CHANGELOG.md     o que mudou em cada versão
+    └── VERSAO.md        política de versionamento semântico
 ```
 
 ## Perguntas frequentes
