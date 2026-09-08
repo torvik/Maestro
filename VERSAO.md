@@ -1,6 +1,6 @@
 # Versionamento do Maestro
 
-Versão atual: **1.3.0**
+Versão atual: **1.3.1**
 
 ## Como numeramos
 

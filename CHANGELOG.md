@@ -2,6 +2,16 @@
 
 Todas as mudanças relevantes do Maestro. Formato baseado em Keep a Changelog; numeração em versionamento semântico (ver `VERSAO.md`).
 
+## [1.3.1] — 2026-09-08
+
+### Adicionado
+- **Verificação de atualização remota** — `python scripts/verificar-repo.py --check versao-remota` consulta o GitHub e avisa se há versão mais nova.
+- **`/maestro:status`** agora avisa automaticamente ao final do quadro quando há atualização disponível (silencioso se offline).
+- `status.py --check-update` para verificar a atualização isoladamente.
+
+### Não é necessário fazer nada
+Patch sem mudança de formato.
+
 ## [1.3.0] — 2026-09-08
 
 ### Adicionado
