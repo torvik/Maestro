@@ -8,8 +8,12 @@ Gabarito. Copie e preencha. Seções vazias são sinal de bloco mal definido —
 ## 1. Identificação
 - Complexidade: C<1-5>
 - Modelo: <id do modelo>
+- Agente: <operario | implementador | arquiteto>
+- Revisor modelo: <id do modelo — deve ser >= executor>
 - Depende de: <IDs ou "nenhum">
-- Orçamento de turnos: <15 | 30>
+- Arquivos permitidos: <globs — escrita fora disto reprova na revisão>
+- Comando de teste: <comando que prova o bloco objetivamente>
+- Orçamento de turnos: <15 para C1-C2 | 30 para C3-C4 | 40 para C5>
 
 ## 2. Objetivo
 O que existe depois que este bloco fecha. Duas linhas.

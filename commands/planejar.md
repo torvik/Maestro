@@ -9,4 +9,4 @@ Alvo: $ARGUMENTS
 
 Se for um bloco existente sem spec, escreva a spec no padrão de 11 seções. Se for um projeto ou fase nova, quebre em blocos, atribua complexidade C1–C5 e modelo a cada um, e registre em `plano/blocos.json`.
 
-Antes de escrever, confirme as suposições que mudariam a arquitetura. Ao terminar, rode `python3 scripts/validar-plano.py`.
+Antes de escrever, confirme as suposições que mudariam a arquitetura. Ao terminar, encontre e rode `validar-plano.py` (mesma estratégia de caminhos do `/maestro:status`) e resolva qualquer ERRO.

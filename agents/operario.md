@@ -4,6 +4,7 @@ description: Executa blocos C1 e C2 — mecânicos e repetitivos. Boilerplate, m
 model: claude-haiku-4-5-20251001
 effort: low
 tools: Read, Write, Edit, Bash, Grep, Glob
+memory: project
 maxTurns: 15
 experimental:
   cacheTtl: 1h

@@ -11,7 +11,7 @@ Contexto é orçamento de atenção, não espaço de armazenamento. O objetivo �
 
 O executor recebe **somente**:
 - a spec do bloco
-- o arquivo de convenções do projeto
+- o arquivo de convenções do projeto (caminho em `maestro.config.json → convencoes`)
 - os arquivos citados na seção "Arquivos" da spec
 
 Ele **não recebe**: o documento de produto, specs de outros blocos, histórico de conversa.
@@ -48,6 +48,7 @@ Implemente o bloco <ID> conforme a spec anexa.
 7. Ao terminar, rode os testes e cole a saída literal.
 
 Escreva apenas nestes caminhos: <arquivos_permitidos>
+Convenções do projeto: <caminho lido de maestro.config.json → convencoes>
 Orçamento: <orcamento_turnos> turnos. Ao estourar, pare e reporte onde travou.
 ```
 

@@ -30,10 +30,11 @@ def checar_versao():
         print(f"  ATENCAO: o plano foi criado na versao {usada} e o plugin e {inst}.")
         print("  O formato do plano mudou. Rode /maestro:setup para migrar antes de executar.")
     print()
+
 ICON = {"concluido": "[x]", "em_andamento": "[~]", "bloqueado": "[!]", "pendente": "[ ]"}
 
-
 PESO = {"haiku": 1, "sonnet": 2, "opus": 5, "fable": 10}
+ORC_DEFAULT = {"C1": 15, "C2": 15, "C3": 30, "C4": 30, "C5": 40}
 
 def _tier(m):
     m = (m or "").lower()
@@ -43,12 +44,15 @@ def _tier(m):
     return "?"
 
 def distribuicao(blocos):
-    """Distribuicao de trabalho por modelo. Meta: ~15% Opus, ~60% Sonnet, ~25% Haiku."""
+    """Distribuicao de trabalho por modelo. Meta: ~15% Opus, ~60% Sonnet, ~25% Haiku.
+    Custo ponderado por orcamento_turnos — um bloco C5/40 turnos pesa mais que C1/15."""
     cont, custo = {}, {}
     for b in blocos:
         t = _tier(b.get("modelo"))
+        comp = (b.get("complexidade") or "").upper()
+        orc = b.get("orcamento_turnos") or ORC_DEFAULT.get(comp, 30)
         cont[t] = cont.get(t, 0) + 1
-        custo[t] = custo.get(t, 0) + PESO.get(t, 0)
+        custo[t] = custo.get(t, 0) + PESO.get(t, 0) * orc
     if not cont:
         return
     total_b, total_c = len(blocos), sum(custo.values()) or 1
@@ -75,11 +79,13 @@ def main():
         plano = json.load(f)
 
     blocos = plano.get("blocos", [])
-    by_id = {b["id"]: b for b in blocos}
     done = {b["id"] for b in blocos if b.get("estado") == "concluido"}
 
     liberados, travados, bloqueados = [], [], []
     for b in blocos:
+        # estado: "bloqueado" e bloqueado_por preenchido sao mecanismos equivalentes
+        if b.get("estado") == "bloqueado":
+            bloqueados.append(b); continue
         if b.get("estado") != "pendente":
             continue
         if b.get("bloqueado_por"):
@@ -105,6 +111,8 @@ def main():
             extra = ""
             if b.get("bloqueado_por"):
                 extra = f"  <- TRAVADO: {b['bloqueado_por']}"
+            elif estado == "bloqueado":
+                extra = "  <- BLOQUEADO"
             elif estado == "pendente":
                 faltam = [x for x in b.get("depende_de", []) if x not in done]
                 if faltam:
@@ -123,7 +131,8 @@ def main():
     if bloqueados:
         print("\n--- TRAVADOS (decisao/credencial pendente) ---")
         for b in bloqueados:
-            print(f"  {b['id']}  {b['bloqueado_por']}")
+            motivo = b.get("bloqueado_por") or "(estado: bloqueado)"
+            print(f"  {b['id']}  {motivo}")
     print()
     distribuicao(blocos)
     return 0

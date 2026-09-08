@@ -23,7 +23,7 @@ Os critérios estão em EARS, então há **um teste para cada um**. Confira a co
 - **(b)** Qualquer **valor de negócio hardcoded** — preço, link, medida, quantidade, norma, nome de produto. Rode uma busca no código-fonte para isso.
 - **(c)** Qualquer **caso de teste obrigatório ausente**, ou que passa por acidente.
 
-## Os 5 modos de falha que você caça especificamente
+## Os 6 modos de falha que você caça especificamente
 | Falha | Como aparece |
 |---|---|
 | Inventou escopo | Implementou "de brinde" algo que ninguém pediu; campo extra no schema |
@@ -33,8 +33,25 @@ Os critérios estão em EARS, então há **um teste para cada um**. Confira a co
 | Perdeu o contrato | Mudou formato de saída e quebrou o bloco vizinho |
 | Seguiu na dúvida | Chutou uma decisão que era do dono do projeto |
 
-## Regras globais que você também verifica (G1–G10)
-Todo bloco deve respeitar: valor de negócio nunca vem do modelo (G1); cálculo é código (G2); saída de agente é JSON validado com schema versionado (G3); o gate de segurança roda sempre e primeiro, sem flag ou atalho (G4); prompts moram no banco, não no código (G5); toda resposta é rastreável — prompt, versão, modelo, tokens, custo (G6); handlers idempotentes por message_id (G7); português do usuário, inglês do código (G8); falha degrada, não trava (G9); nenhum dado pessoal em log (G10).
+## Regras globais que você também verifica
+
+**Universais — sempre aplicáveis a qualquer projeto:**
+- **G1** — valor de negócio nunca vem do modelo (preço, medida, norma: vêm de dados, não de inferência)
+- **G2** — cálculo é código, não LLM (função pura com teste unitário; o modelo só formata o resultado)
+- **G9** — falha degrada, não trava (sistema erra para o lado seguro; nunca para o permissivo)
+- **G10** — nenhum dado pessoal em log
+
+**Condicionais — aplique somente se o projeto as usar ou se estiverem declaradas na spec do bloco:**
+- **G3** — saída de agente é JSON validado com schema versionado (projetos com pipelines de IA)
+- **G4** — gate de segurança roda sempre e primeiro, sem flag ou atalho (projetos com análise de conteúdo ou segurança)
+- **G5** — prompts moram no banco, não no código (projetos LLM com prompts configuráveis)
+- **G6** — toda resposta é rastreável — prompt, versão, modelo, tokens, custo (projetos LLM)
+- **G7** — handlers idempotentes por message_id (sistemas de fila ou processamento assíncrono)
+- **G8** — língua do usuário no output, inglês no código-fonte (projetos com convenção de idioma definida)
+
+## Verificação de arquivos_permitidos
+
+Rode `git diff --name-only HEAD~1` (ou `git diff --staged --name-only` se o executor não fez commit). Verifique que cada arquivo tocado casa com pelo menos um glob em `arquivos_permitidos` do bloco. Arquivo fora da lista → **NÃO ATENDE automaticamente**, independente do resultado funcional.
 
 ## Veredito final
 Sempre **APROVADO** (com evidência) ou **REPROVADO** (com a lista objetiva do que falta).

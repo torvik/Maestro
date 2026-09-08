@@ -63,7 +63,7 @@ E `plano/blocos.json` conforme `../planejar-projeto/references/schema-blocos.md`
 **Grave sempre o `maestro_versao`**, lendo do `plugin.json` instalado. É o que permite detectar depois que um plano antigo está rodando com um plugin de formato novo.
 
 ## Passo 4 — Validar e mostrar
-Rode `python3 scripts/validar-plano.py`, depois `python3 scripts/status.py`. Mostre o quadro e diga qual é o próximo bloco liberado.
+Encontre e rode `validar-plano.py` (tente: `scripts/validar-plano.py`, `.claude/plugins/maestro/scripts/validar-plano.py`, ou `find ~/.claude/plugins/cache/maestro -name "validar-plano.py" 2>/dev/null | head -1`). Depois encontre e rode `status.py` da mesma forma. Mostre o quadro e diga qual é o próximo bloco liberado.
 
 ## Passo 5 — Fechar com as três ações
 - `/maestro:status` — ver onde está

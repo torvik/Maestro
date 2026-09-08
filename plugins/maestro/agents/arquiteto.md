@@ -4,6 +4,8 @@ description: Escreve e revisa specs de bloco, desenha arquitetura, contratos ent
 model: claude-opus-5
 effort: high
 memory: project
+tools: Read, Write, Edit, Bash, Grep, Glob, Agent
+maxTurns: 50
 experimental:
   cacheTtl: 1h
 ---

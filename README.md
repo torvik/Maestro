@@ -8,7 +8,7 @@ Plugin gratuito e aberto para [Claude Code](https://claude.com/code) que quebra 
 decide o quanto cada um é arriscado e manda cada um para o modelo certo — com critério de aceite
 verificável por teste, não por opinião do modelo.
 
-[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.1.1-blue)](plugins/maestro/CHANGELOG.md)
+[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.2.0-blue)](plugins/maestro/CHANGELOG.md)
 [![Licença](https://img.shields.io/badge/licença-MIT-lightgrey)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/requer-Claude%20Code-black)](https://claude.com/code)
 
@@ -82,6 +82,9 @@ Guias completos:
 | `/maestro:planejar` | Escreve a especificação de um bloco novo, com o modelo forte |
 | `/maestro:replanejar` | Ajusta o plano quando a realidade muda |
 | `/maestro:custos` | Distribuição planejada por modelo + lembrete dos comandos nativos `/context` e `/usage` |
+| `/maestro:retomar` | Recupera blocos interrompidos (`em_andamento`) após crash ou compactação de sessão |
+| `/maestro:revisar <ID>` | Revisão de auditoria de qualquer bloco, independente do fluxo de execução |
+| `/maestro:proxima --dry-run` | Mostra qual bloco seria executado sem despachar nada |
 
 ## Padrões aplicados
 

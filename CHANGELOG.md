@@ -2,6 +2,39 @@
 
 Todas as mudanças relevantes do Maestro. Formato baseado em Keep a Changelog; numeração em versionamento semântico (ver `VERSAO.md`).
 
+## [1.2.0] — 2026-09-08
+
+### Adicionado
+- **`/maestro:retomar`** — recupera blocos `em_andamento` após crash ou sessão interrompida; analisa o git e oferece retomar, resetar ou descartar.
+- **`/maestro:revisar <ID>`** — revisão de auditoria de qualquer bloco, independente do fluxo de execução.
+- **`/maestro:proxima --dry-run`** — mostra qual bloco seria executado sem despachar nada.
+- **Skill `migrar-plano`** — migra `plano/blocos.json` de versão MAIOR mais antiga preservando estado, tentativas e notas.
+
+### Corrigido
+- `/maestro:status` falhava com "scripts/status.py não existe" em projetos com plugin instalado via marketplace. Agora usa fallback de caminhos (igual ao `custos.md`).
+- `validar-plano.py` não validava `revisor_modelo`, `comando_teste`, `orcamento_turnos` e `tentativas` como campos obrigatórios — planos com esses campos ausentes passavam silenciosamente.
+- `validar-plano.py` e `status.py` ignoravam blocos com `estado: "bloqueado"` (ficavam invisíveis no quadro).
+- Todos os scripts com caminhos hardcoded para `scripts/validar-plano.py` (`/maestro:planejar`, `/maestro:replanejar`, setup, skills) agora usam estratégia de fallback de caminhos.
+- Arquivo de convenções do projeto (`maestro.config.json → convencoes`) não era passado ao executor. Agents `maestro` e skill `executar-bloco` agora resolvem o caminho do config antes de despachar.
+
+### Melhorado
+- `revisor.md`: G1–G10 divididos em universais (G1, G2, G9, G10) e condicionais (G3–G8) para evitar falso reprovação em projetos que não usam banco/fila/LLM.
+- `revisor.md`: instrução explícita para checar `arquivos_permitidos` via `git diff --name-only`.
+- `revisor.md`: corrigido "Os 5 modos de falha" → "Os 6 modos de falha".
+- `maestro.md`: detecta e trata blocos `em_andamento` antes de despachar novo bloco.
+- `maestro.md`: caminho de convenções resolvido do config; `Write` adicionado ao `tools`; `maxTurns: 40`.
+- `arquiteto.md`: `tools` declarado explicitamente; `maxTurns: 50`.
+- `operario.md`: `memory: project` adicionado.
+- `explorador.md`: `cacheTtl: 1h` adicionado (igual aos demais agentes).
+- `anatomia-da-spec.md`: seção 1 alinhada com o schema — agora inclui `agente`, `revisor_modelo`, `arquivos_permitidos` e `comando_teste`.
+- `status.py`: custo na distribuição agora ponderado por `orcamento_turnos` (bloco C5/40 turnos pesa proporcionalmente mais que C1/15 turnos).
+- `status.py`: variável `by_id` morta removida.
+- `validar-plano.py`: spec file existence check — aviso se `spec` aponta para arquivo inexistente.
+- `replanejar.md`: valida o plano após alterações.
+
+### Não é necessário fazer nada
+Esta versão não muda o formato do `plano/blocos.json`. Planos da 1.x continuam válidos. Os novos campos obrigatórios (`revisor_modelo`, `comando_teste`, `orcamento_turnos`, `tentativas`) eram recomendados e agora são exigidos — blocos já existentes sem esses campos receberão ERRO no `validar-plano.py`; basta preenchê-los.
+
 ## [1.1.1] — 2026-09-08
 
 ### Corrigido

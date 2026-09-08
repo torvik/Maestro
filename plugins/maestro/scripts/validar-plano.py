@@ -4,8 +4,9 @@ import json, sys, os
 
 PLANO = os.environ.get("MAESTRO_PLANO", "plano/blocos.json")
 HAIKU = "haiku"
-OBRIG = ["id","titulo","spec","complexidade","modelo","agente","depende_de",
-         "arquivos_permitidos","criterio_aceite","estado"]
+OBRIG = ["id","titulo","spec","complexidade","modelo","agente","revisor_modelo",
+         "depende_de","arquivos_permitidos","criterio_aceite","estado",
+         "comando_teste","orcamento_turnos","tentativas"]
 # marcadores EARS (pt-BR e en) — criterio deve virar teste
 EARS = ("DEVE", "SHALL", "QUANDO", "WHEN", "SE ", "IF ", "ENQUANTO", "WHILE", "ONDE", "WHERE")
 VAGO = ("rapido", "rápido", "adequadamente", "corretamente", "bem ", "boa ", "funcionar bem",
@@ -39,6 +40,11 @@ def main():
             if campo not in b or b[campo] in (None, ""):
                 erros.append(f"{bid}: campo obrigatorio ausente: {campo}")
 
+        # Verificar se arquivo de spec existe no caminho declarado
+        spec_path = b.get("spec", "")
+        if spec_path and not os.path.exists(spec_path):
+            avisos.append(f"{bid}: arquivo de spec nao encontrado: {spec_path}")
+
         comp = (b.get("complexidade") or "").upper()
         if comp not in ("C1","C2","C3","C4","C5"):
             erros.append(f"{bid}: complexidade invalida ({comp!r})")
@@ -71,12 +77,8 @@ def main():
                 if v in cl:
                     avisos.append(f"{bid}: criterio vago (termo '{v.strip()}') -> reescreva com numero")
                     break
-        if not b.get("comando_teste"):
-            avisos.append(f"{bid}: sem comando_teste — nao ha prova objetiva de pronto")
         orc = b.get("orcamento_turnos")
-        if orc is None:
-            avisos.append(f"{bid}: sem orcamento_turnos (sugerido: {ORC.get(comp, 30)})")
-        elif orc > 60:
+        if orc is not None and orc > 60:
             avisos.append(f"{bid}: orcamento de {orc} turnos e alto — bloco provavelmente grande demais")
         # C4 inteiro no modelo forte: quase sempre deve virar desenho + implementacao
         if comp == "C4" and "opus" in (b.get("modelo") or "").lower():
@@ -84,7 +86,7 @@ def main():
         if b.get("tentativas", 0) >= 2 and b.get("estado") == "pendente":
             avisos.append(f"{bid}: {b['tentativas']} tentativas — revisar a SPEC antes de escalar modelo")
         if b.get("estado") == "em_andamento":
-            avisos.append(f"{bid}: marcado em_andamento (sessao interrompida?)")
+            avisos.append(f"{bid}: marcado em_andamento (sessao interrompida?) — rode /maestro:retomar")
 
     # ciclos
     grafo = {b["id"]: b.get("depende_de", []) for b in blocos if b.get("id")}
