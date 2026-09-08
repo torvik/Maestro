@@ -135,7 +135,42 @@ def main():
             print(f"  {b['id']}  {motivo}")
     print()
     distribuicao(blocos)
+    resumo_metricas()
     return 0
+
+METRICAS = os.environ.get("MAESTRO_METRICAS", "plano/metricas.json")
+
+def resumo_metricas():
+    if not os.path.exists(METRICAS):
+        return
+    try:
+        with open(METRICAS, encoding="utf-8") as f:
+            m = json.load(f)
+    except Exception as e:
+        print(f"  AVISO: metricas.json invalido ({e}) — ignorado.")
+        return
+    if m.get("schema") != 1:
+        print(f"  AVISO: metricas.json schema={m.get('schema')} desconhecido — ignorado.")
+        return
+    regs = m.get("registros", [])
+    if not regs:
+        return
+    reprovados = sum(1 for r in regs if r.get("veredito") == "reprovado")
+    usados = [r["turnos_usados"] for r in regs if r.get("turnos_usados") is not None]
+    orcados = [r["turnos_orcados"] for r in regs if r.get("turnos_usados") is not None]
+    ignorados = sum(1 for r in regs if r.get("turnos_usados") is None)
+    ids_duplos = [i for i in {r["id"] for r in regs} if sum(1 for r in regs if r["id"] == i) >= 2]
+    print("--- METRICAS ---")
+    print(f"  blocos medidos: {len(regs)}")
+    if usados:
+        extra = f"  ({ignorados} sem contagem)" if ignorados else ""
+        print(f"  turnos: {sum(usados)}/{sum(orcados)}{extra}")
+    else:
+        print(f"  turnos: n/a ({ignorados} sem contagem)")
+    print(f"  reprovacoes: {reprovados}")
+    if ids_duplos:
+        print(f"  blocos com 2+ registros: {', '.join(sorted(ids_duplos))}")
+    print()
 
 if __name__ == "__main__":
     sys.exit(main())
