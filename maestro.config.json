@@ -2,6 +2,6 @@
   "projeto": "Maestro Plugin",
   "descricao": "Plugin para Claude Code que orquestra execução multi-agente de projetos.",
   "convencoes": "plugins/maestro/skills/executar-bloco/convencoes-maestro.md",
-  "maestro_versao": "1.2.0",
+  "maestro_versao": "1.3.0",
   "comando_teste": "python scripts/validar-plano.py"
 }

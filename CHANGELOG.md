@@ -2,6 +2,31 @@
 
 Todas as mudanças relevantes do Maestro. Formato baseado em Keep a Changelog; numeração em versionamento semântico (ver `VERSAO.md`).
 
+## [1.3.0] — 2026-09-08
+
+### Adicionado
+- **`/maestro:destravar <ID>`** — limpa `bloqueado_por` com confirmação explícita, sem editar JSON manualmente.
+- **`/maestro:editar <ID>`** — ajuste pontual ou regeração completa da spec de um bloco pelo arquiteto.
+- **`/maestro:rollback <ID>`** — desfaz um bloco aprovado via `git revert` (nunca `git reset`). Exige commit SHA em `metricas.json`.
+- **`/maestro:exportar`** — gera `plano/RELATORIO.md` com estado completo, specs e métricas. Pronto para compartilhar.
+- **`/maestro:status --bloco <ID>`** — detalhe completo de um bloco: critérios, dependências, arquivos, notas e métricas históricas.
+- **`/maestro:proxima --paralelo`** — despacha lote de até `max_paralelo` blocos simultaneamente, com commits serializados.
+- **F-MULTIFASE:** todos os comandos e scripts aceitam `--fase <nome>` para operar em `plano/<nome>/blocos.json`. Planos legados continuam funcionando sem argumento.
+- **`scripts/paralelo.py`** — analisador de lotes: predicado C1–C6, algoritmo `disjoint()` com memoização, modo `--check A B`.
+- **`scripts/verificar-repo.py`** — 5 verificações do repositório: paridade root↔plugins, portabilidade (sem `find ~/`), comandos documentados, versão coerente, plano válido.
+- **`scripts/exportar-relatorio.py`** — gerador determinístico de relatório Markdown. Sem modelo, sem git.
+- **`plano/metricas.json`** — contrato de 11 campos por execução de bloco. Suporte a histórico de reprovações.
+- **`maestro.config.json: fase_padrao`** — equivale a `--fase <valor>` quando o argumento está ausente (opcional).
+- **`maestro.config.json: max_paralelo`** — teto de paralelismo (padrão: 2).
+- **`validar-plano.py`**: detecta `depende_de` com referência cruzada de fase (`"outra:F1-01"`) e reporta ERRO.
+
+### Corrigido
+- Scripts e skills usavam `find ~/` e `python3` sem fallback — quebravam no Windows. Resolvido pela skill `maestro-runtime` com cadeia python → python3 → py -3.
+- `maestro.config.json` gerado pelo setup não incluía todos os campos obrigatórios (`max_tentativas`, `orcamento_turnos`, `revisor_por_complexidade`).
+
+### Não é necessário fazer nada
+Esta versão não muda o formato de `plano/blocos.json`. Planos da 1.x continuam válidos sem migração. Os novos campos de config (`fase_padrao`, `max_paralelo`) são opcionais.
+
 ## [1.2.0] — 2026-09-08
 
 ### Adicionado
