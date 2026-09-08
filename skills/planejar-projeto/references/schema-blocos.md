@@ -64,6 +64,41 @@ Fonte de verdade do estado da execução. Só o agente `maestro` escreve aqui.
 | Em execução | `em_andamento` | `null` | `/maestro:retomar` |
 | Fechado | `concluido` | `null` | — |
 
+## Layout multifase
+
+Quando o projeto tem mais de uma fase independente, cada fase fica em sua própria subpasta:
+
+```
+plano/
+  principal/blocos.json   ← fase "principal"
+  beta/blocos.json        ← fase "beta"
+  metricas.json           ← legado (uma fase só)
+  principal/metricas.json ← multifase
+```
+
+### Regras de precedência (--fase)
+
+1. `--fase <nome>` presente → usa `plano/<nome>/blocos.json`. Erro se não existir.
+2. `--fase` ausente e `plano/blocos.json` existe → usa `plano/blocos.json` (legado, sem aviso).
+3. `--fase` ausente, sem `plano/blocos.json`, exatamente uma subpasta `plano/*/blocos.json` → usa essa subpasta e imprime o caminho resolvido.
+4. `--fase` ausente, sem `plano/blocos.json`, duas ou mais subpastas → erro com lista das fases e instrução para passar `--fase`.
+
+### Dependência entre fases
+
+`depende_de` nunca cruza fases. `"depende_de": ["outra_fase:F1-01"]` é **ERRO de validação**. A ordem entre fases é responsabilidade do dono.
+
+### Colisão de ID
+
+O mesmo `id` em duas fases carregadas na mesma invocação é **ERRO de validação**.
+
+### `fase_padrao` em `maestro.config.json`
+
+```json
+{ "fase_padrao": "principal" }
+```
+
+Equivale a `--fase principal` quando `--fase` não é passado. Não é obrigatório.
+
 ## Regras invioláveis
 1. Bloco **C5 nunca** recebe modelo Haiku, nem para executar, nem para revisar.
 2. `revisor_modelo` é sempre igual ou superior ao `modelo`.

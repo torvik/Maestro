@@ -422,12 +422,13 @@
       ],
       "comando_teste": "python scripts/validar-plano.py",
       "orcamento_turnos": 30,
-      "estado": "pendente",
+      "estado": "concluido",
       "tentativas": 0,
       "bloqueado_por": null,
       "notas": [
         "Bloco de desenho de um C4 quebrado em desenho + implementacao (F2-13). O aviso do validador sobre 'C4 inteiro no modelo forte' e falso positivo aqui: o desenho e Opus, a implementacao e Sonnet.",
-        "Depende de todos os comandos novos porque --fase precisa ser adicionado ao conjunto final de comandos, nao a um conjunto parcial."
+        "Depende de todos os comandos novos porque --fase precisa ser adicionado ao conjunto final de comandos, nao a um conjunto parcial.",
+        "Concluído em 2026-09-08 — spec F2-13 escrita, schema-blocos.md atualizado com layout multifase."
       ]
     },
     {
@@ -572,11 +573,12 @@
       ],
       "comando_teste": "python scripts/verificar-repo.py --check comandos-documentados && python scripts/verificar-repo.py --check paridade",
       "orcamento_turnos": 15,
-      "estado": "pendente",
+      "estado": "concluido",
       "tentativas": 0,
       "bloqueado_por": null,
       "notas": [
-        "O enunciado original pedia 'cinco para oito'. Como este bloco roda depois dos comandos novos, a contagem correta e derivada de commands/, nao fixada no texto do pedido."
+        "O enunciado original pedia 'cinco para oito'. Como este bloco roda depois dos comandos novos, a contagem correta e derivada de commands/, nao fixada no texto do pedido.",
+        "Concluído em 2026-09-08 — implementado diretamente."
       ]
     },
     {
@@ -607,11 +609,12 @@
       ],
       "comando_teste": "python scripts/verificar-repo.py --check comandos-documentados && python scripts/verificar-repo.py --check paridade",
       "orcamento_turnos": 15,
-      "estado": "pendente",
+      "estado": "concluido",
       "tentativas": 0,
       "bloqueado_por": null,
       "notas": [
-        "O titulo do passo diz 'as tres acoes' e precisa mudar junto com a lista."
+        "O titulo do passo diz 'as tres acoes' e precisa mudar junto com a lista.",
+        "Concluído em 2026-09-08 — implementado diretamente."
       ]
     }
   ]
