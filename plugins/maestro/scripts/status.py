@@ -70,7 +70,115 @@ def distribuicao(blocos):
         print(f"  {bid}: {n} tentativas -> corrija a SPEC antes de escalar o modelo")
     print()
 
+def detalhe_bloco(bid):
+    if not os.path.exists(PLANO):
+        print(f"Plano nao encontrado em {PLANO}.")
+        return 1
+    with open(PLANO, encoding="utf-8") as f:
+        plano = json.load(f)
+    blocos = plano.get("blocos", [])
+    by_id = {b["id"]: b for b in blocos}
+
+    if bid not in by_id:
+        print(f"bloco nao encontrado: {bid}")
+        print("IDs validos: " + ", ".join(b["id"] for b in blocos))
+        return 1
+
+    b = by_id[bid]
+    estado = b.get("estado", "pendente")
+    motivo = b.get("bloqueado_por", "")
+
+    estado_txt = estado
+    if motivo:
+        estado_txt += f"  <- TRAVADO: {motivo}"
+
+    # max_tentativas do config
+    max_tent = 2
+    if os.path.exists(CONFIG):
+        try:
+            max_tent = json.load(open(CONFIG, encoding="utf-8")).get("max_tentativas", 2)
+        except Exception:
+            pass
+
+    spec = b.get("spec", "")
+    spec_txt = spec if spec else "(nao definido)"
+    if spec and not os.path.exists(spec):
+        spec_txt += "  (AUSENTE)"
+
+    print(f"\n=== {b['id']} — {b.get('titulo', '')} ===")
+    print(f"  estado           {estado_txt}")
+    print(f"  complexidade     {b.get('complexidade','?')}   agente {b.get('agente','?')}")
+    print(f"  modelo           {b.get('modelo','?')}   revisor {b.get('revisor_modelo','?')}")
+    print(f"  tentativas       {b.get('tentativas', 0)} de {max_tent}")
+    print(f"  orcamento        {b.get('orcamento_turnos','?')} turnos")
+    print(f"  spec             {spec_txt}")
+    print(f"  comando_teste    {b.get('comando_teste','') or '(nao definido)'}")
+
+    print("\n--- DEPENDENCIAS ---")
+    deps = b.get("depende_de") or []
+    if deps:
+        for d in deps:
+            dep_estado = by_id[d].get("estado", "?") if d in by_id else "?"
+            print(f"  {d}  {dep_estado}")
+    else:
+        print("  nenhuma")
+
+    print("\n--- ARQUIVOS PERMITIDOS ---")
+    arqs = b.get("arquivos_permitidos") or []
+    for a in arqs:
+        print(f"  {a}")
+    if not arqs:
+        print("  (nao definido)")
+
+    print("\n--- CRITERIOS DE ACEITE ---")
+    criterios = b.get("criterio_aceite") or []
+    for i, c in enumerate(criterios, 1):
+        print(f"  {i}. {c}")
+    if not criterios:
+        print("  (nao definido)")
+
+    print("\n--- NOTAS ---")
+    notas = b.get("notas") or []
+    for n in notas:
+        print(f"  {n}")
+    if not notas:
+        print("  nenhuma")
+
+    # Metricas do bloco
+    if os.path.exists(METRICAS):
+        try:
+            m = json.load(open(METRICAS, encoding="utf-8"))
+            if m.get("schema") == 1:
+                regs = [r for r in m.get("registros", []) if r.get("id") == bid]
+                regs.sort(key=lambda x: x.get("timestamp_fim", ""))
+                if regs:
+                    print("\n--- METRICAS ---")
+                    for r in regs:
+                        usados = r.get("turnos_usados")
+                        orcados = r.get("turnos_orcados", "?")
+                        turnos = f"{usados}/{orcados}" if usados is not None else f"?/{orcados}"
+                        sha = r.get("commit_sha") or "null"
+                        print(f"  {r.get('timestamp_fim','')}  {r.get('veredito','?')}  "
+                              f"turnos {turnos}  modelo {r.get('modelo_efetivo','?')}  commit {sha}")
+        except Exception:
+            pass
+
+    if motivo:
+        print(f"\n  -> Para destravar: /maestro:destravar {bid}")
+
+    print()
+    return 0
+
+
 def main():
+    # Modo --bloco <ID>
+    args = sys.argv[1:]
+    if args and args[0] == "--bloco":
+        if len(args) < 2:
+            print("Uso: status.py --bloco <ID>")
+            return 1
+        return detalhe_bloco(args[1])
+
     if not os.path.exists(PLANO):
         print(f"Plano nao encontrado em {PLANO}. Rode /maestro:setup.")
         return 1
