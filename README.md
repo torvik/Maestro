@@ -62,7 +62,7 @@ quase sempre de que uma especificação ficou ambígua e alguém subiu de modelo
 ## Instalar
 
 ```
-/plugin marketplace add SEU-USUARIO/maestro
+/plugin marketplace add torvik/Maestro
 /plugin install maestro@maestro
 /maestro:setup
 ```
