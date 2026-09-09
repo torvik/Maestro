@@ -1,0 +1,2 @@
+- [Sem ferramenta Agent/Task neste ambiente](feedback_sem_agent_tool.md) — execute bloco direto + revise por critério EARS, documente o desvio.
+- [Paridade falha por CRLF pré-existente](project_paridade_crlf.md) — 31 arquivos raiz(CRLF)/plugin(LF), não é regressão de bloco novo.

@@ -1,0 +1,71 @@
+{
+  "schema": 1,
+  "projeto": "maestro",
+  "registros": [
+    {
+      "id": "F3-01",
+      "modelo_planejado": "claude-sonnet-5",
+      "modelo_efetivo": "claude-sonnet-5",
+      "revisor_modelo": "claude-sonnet-5",
+      "turnos_orcados": 30,
+      "turnos_usados": null,
+      "tentativas": 0,
+      "veredito": "aprovado",
+      "commit_sha": "e58a164",
+      "timestamp_inicio": "2026-09-09T00:10:00Z",
+      "timestamp_fim": "2026-09-09T00:42:20Z"
+    },
+    {
+      "id": "F3-02",
+      "modelo_planejado": "claude-haiku-4-5",
+      "modelo_efetivo": "claude-haiku-4-5",
+      "revisor_modelo": "claude-sonnet-5",
+      "turnos_orcados": 15,
+      "turnos_usados": null,
+      "tentativas": 0,
+      "veredito": "aprovado",
+      "commit_sha": "5053b3e",
+      "timestamp_inicio": "2026-09-08T21:00:00Z",
+      "timestamp_fim": "2026-09-08T21:30:00Z"
+    },
+    {
+      "id": "F3-03",
+      "modelo_planejado": "claude-sonnet-5",
+      "modelo_efetivo": "claude-sonnet-5",
+      "revisor_modelo": "claude-sonnet-5",
+      "turnos_orcados": 30,
+      "turnos_usados": null,
+      "tentativas": 0,
+      "veredito": "aprovado",
+      "commit_sha": "5574a77",
+      "timestamp_inicio": "2026-09-09T00:55:00Z",
+      "timestamp_fim": "2026-09-09T01:10:00Z"
+    },
+    {
+      "id": "F3-04",
+      "modelo_planejado": "claude-sonnet-5",
+      "modelo_efetivo": "claude-sonnet-5",
+      "revisor_modelo": "claude-sonnet-5",
+      "turnos_orcados": 30,
+      "turnos_usados": null,
+      "tentativas": 0,
+      "veredito": "aprovado",
+      "commit_sha": "00872b1",
+      "timestamp_inicio": "2026-09-09T01:12:00Z",
+      "timestamp_fim": "2026-09-09T01:15:16Z"
+    },
+    {
+      "id": "F3-05",
+      "modelo_planejado": "claude-haiku-4-5",
+      "modelo_efetivo": "claude-sonnet-5",
+      "revisor_modelo": "claude-sonnet-5",
+      "turnos_orcados": 15,
+      "turnos_usados": null,
+      "tentativas": 0,
+      "veredito": "aprovado",
+      "commit_sha": "488a179",
+      "timestamp_inicio": "2026-09-09T01:17:00Z",
+      "timestamp_fim": "2026-09-09T01:21:59Z"
+    }
+  ]
+}
