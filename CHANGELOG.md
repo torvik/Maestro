@@ -2,6 +2,17 @@
 
 Todas as mudanças relevantes do Maestro. Formato baseado em Keep a Changelog; numeração em versionamento semântico (ver `VERSAO.md`).
 
+## [1.3.2] — 2026-09-08
+
+### Adicionado
+- **Detecção de blocos órfãos** — `/maestro:status` exibe seção `--- DEPENDENCIAS ORFAS ---` quando um bloco referencia ID inexistente. `verificar-repo.py --check plano` reporta cada par órfão e sai com código 1.
+- **Lock de multissessão** — `scripts/lock.py adquirir/liberar/status` usa criação atômica (`O_CREAT | O_EXCL`). `/maestro:proxima` verifica o lock antes de despachar; `/maestro:retomar` diagnostica lock obsoleto. Arquivo `plano/.lock` adicionado ao `.gitignore`.
+- **Fallback de métricas corrompidas** — `status.py` e `exportar-relatorio.py` não falham quando `plano/metricas.json` está com JSON inválido, schema divergente ou registro sem `id`. Quadro é exibido sem métricas com aviso não-fatal.
+- **`scripts/novo-bloco.py`** — gera esqueleto de spec com as 11 seções obrigatórias e placeholders prontos para edição. Uso: `python scripts/novo-bloco.py F3-06 "Meu bloco"`.
+
+### Não é necessário fazer nada
+Patch sem mudança de formato. Planos 1.x continuam válidos.
+
 ## [1.3.1] — 2026-09-08
 
 ### Adicionado

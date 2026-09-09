@@ -8,7 +8,7 @@ Plugin gratuito e aberto para [Claude Code](https://claude.com/code) que quebra 
 decide o quanto cada um é arriscado e manda cada um para o modelo certo — com critério de aceite
 verificável por teste, não por opinião do modelo.
 
-[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.3.1-blue)](plugins/maestro/CHANGELOG.md)
+[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.3.2-blue)](plugins/maestro/CHANGELOG.md)
 [![Licença](https://img.shields.io/badge/licença-MIT-lightgrey)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/requer-Claude%20Code-black)](https://claude.com/code)
 
@@ -88,6 +88,7 @@ Guias completos:
 | `/maestro:editar <ID>` | Ajuste pontual ou regeração completa da spec de um bloco pelo arquiteto |
 | `/maestro:rollback <ID>` | Desfaz um bloco aprovado com `git revert`. Nunca `git reset`. Exige árvore limpa |
 | `/maestro:exportar` | Gera `plano/RELATORIO.md` com estado, specs e métricas — pronto para compartilhar |
+| `/maestro:help` | Lista todos os comandos com descrição, quando usar cada um e exemplos. Inclui guia de início rápido em 3 passos |
 
 Todos os comandos aceitam `--fase <nome>` para operar em `plano/<nome>/blocos.json`. Planos legados continuam funcionando sem o argumento.
 
