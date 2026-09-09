@@ -1,2 +1,4 @@
 node_modules/
 .DS_Store
+plano/.lock
+plano/*/.lock
