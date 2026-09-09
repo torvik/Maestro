@@ -27,6 +27,19 @@
       "commit_sha": "5053b3e",
       "timestamp_inicio": "2026-09-08T21:00:00Z",
       "timestamp_fim": "2026-09-08T21:30:00Z"
+    },
+    {
+      "id": "F3-03",
+      "modelo_planejado": "claude-sonnet-5",
+      "modelo_efetivo": "claude-sonnet-5",
+      "revisor_modelo": "claude-sonnet-5",
+      "turnos_orcados": 30,
+      "turnos_usados": null,
+      "tentativas": 0,
+      "veredito": "aprovado",
+      "commit_sha": "5574a77",
+      "timestamp_inicio": "2026-09-09T00:55:00Z",
+      "timestamp_fim": "2026-09-09T01:10:00Z"
     }
   ]
 }
