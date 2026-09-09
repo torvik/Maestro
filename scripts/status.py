@@ -199,6 +199,39 @@ def orfaos_por_bloco(blocos):
     return mapa
 
 # ---------------------------------------------------------------------------
+# Metricas: leitura blindada (metricas.json e append-only, nunca escrito aqui)
+# ---------------------------------------------------------------------------
+
+def _carregar_metricas(metricas_path):
+    """Le e valida plano/metricas.json. Retorna (registros_validos, aviso, descartados).
+    aviso e None quando o arquivo esta ausente ou integro; nesse caso a secao de
+    metricas deve ser omitida sem nenhuma mensagem (R5). Quando aviso nao e None,
+    o arquivo inteiro e tratado como corrompido e registros_validos vem vazio (R6).
+    Registro individual sem 'id', ou que nao e objeto, e descartado e contado em
+    'descartados', sem afetar os demais nem gerar excecao (R2, R3)."""
+    if not os.path.exists(metricas_path):
+        return [], None, 0
+    try:
+        with open(metricas_path, encoding="utf-8") as f:
+            m = json.load(f)
+    except Exception as e:
+        return [], f"JSON invalido ({e})", 0
+    if not isinstance(m, dict):
+        return [], "formato invalido", 0
+    if m.get("schema") != 1:
+        return [], f"schema {m.get('schema')} desconhecido", 0
+    regs = m.get("registros")
+    if not isinstance(regs, list):
+        return [], "campo 'registros' nao e uma lista", 0
+    validos, descartados = [], 0
+    for r in regs:
+        if not isinstance(r, dict) or not r.get("id"):
+            descartados += 1
+            continue
+        validos.append(r)
+    return validos, None, descartados
+
+# ---------------------------------------------------------------------------
 # Detalhe de bloco
 # ---------------------------------------------------------------------------
 
@@ -277,23 +310,21 @@ def detalhe_bloco(bid, plano_path, metricas_path):
         print("  nenhuma")
 
     # Metricas do bloco
-    if os.path.exists(metricas_path):
-        try:
-            m = json.load(open(metricas_path, encoding="utf-8"))
-            if m.get("schema") == 1:
-                regs = [r for r in m.get("registros", []) if r.get("id") == bid]
-                regs.sort(key=lambda x: x.get("timestamp_fim", ""))
-                if regs:
-                    print("\n--- METRICAS ---")
-                    for r in regs:
-                        usados = r.get("turnos_usados")
-                        orcados = r.get("turnos_orcados", "?")
-                        turnos = f"{usados}/{orcados}" if usados is not None else f"?/{orcados}"
-                        sha = r.get("commit_sha") or "null"
-                        print(f"  {r.get('timestamp_fim','')}  {r.get('veredito','?')}  "
-                              f"turnos {turnos}  modelo {r.get('modelo_efetivo','?')}  commit {sha}")
-        except Exception:
-            pass
+    regs_todos, aviso, _descartados = _carregar_metricas(metricas_path)
+    if aviso:
+        print(f"\n  AVISO: metricas.json ignorado — {aviso}. O quadro do plano nao foi afetado.")
+    else:
+        regs = [r for r in regs_todos if r.get("id") == bid]
+        regs.sort(key=lambda x: x.get("timestamp_fim", ""))
+        if regs:
+            print("\n--- METRICAS ---")
+            for r in regs:
+                usados = r.get("turnos_usados")
+                orcados = r.get("turnos_orcados", "?")
+                turnos = f"{usados}/{orcados}" if usados is not None else f"?/{orcados}"
+                sha = r.get("commit_sha") or "null"
+                print(f"  {r.get('timestamp_fim','')}  {r.get('veredito','?')}  "
+                      f"turnos {turnos}  modelo {r.get('modelo_efetivo','?')}  commit {sha}")
 
     if motivo:
         print(f"\n  -> Para destravar: /maestro:destravar {bid}")
@@ -306,25 +337,22 @@ def detalhe_bloco(bid, plano_path, metricas_path):
 # ---------------------------------------------------------------------------
 
 def resumo_metricas(metricas_path):
-    if not os.path.exists(metricas_path):
+    regs, aviso, descartados = _carregar_metricas(metricas_path)
+    if aviso:
+        print(f"  AVISO: metricas.json ignorado — {aviso}. O quadro do plano nao foi afetado.")
+        print()
         return
-    try:
-        with open(metricas_path, encoding="utf-8") as f:
-            m = json.load(f)
-    except Exception as e:
-        print(f"  AVISO: metricas.json invalido ({e}) — ignorado.")
-        return
-    if m.get("schema") != 1:
-        print(f"  AVISO: metricas.json schema={m.get('schema')} desconhecido — ignorado.")
-        return
-    regs = m.get("registros", [])
+    if descartados:
+        print(f"  AVISO: {descartados} registro(s) de metricas.json descartado(s) por falta do campo 'id'.")
     if not regs:
+        if descartados:
+            print()
         return
     reprovados = sum(1 for r in regs if r.get("veredito") == "reprovado")
-    usados = [r["turnos_usados"] for r in regs if r.get("turnos_usados") is not None]
-    orcados = [r["turnos_orcados"] for r in regs if r.get("turnos_usados") is not None]
+    usados = [r.get("turnos_usados") for r in regs if r.get("turnos_usados") is not None]
+    orcados = [r.get("turnos_orcados") for r in regs if r.get("turnos_usados") is not None]
     ignorados = sum(1 for r in regs if r.get("turnos_usados") is None)
-    ids_duplos = [i for i in {r["id"] for r in regs} if sum(1 for r in regs if r["id"] == i) >= 2]
+    ids_duplos = [i for i in {r.get("id") for r in regs} if sum(1 for r in regs if r.get("id") == i) >= 2]
     print("--- METRICAS ---")
     print(f"  blocos medidos: {len(regs)}")
     if usados:

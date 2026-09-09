@@ -89,6 +89,31 @@ def _raiz():
     return Path(__file__).resolve().parent.parent
 
 
+def _carregar_metricas(metricas_path: Path):
+    """Le e valida plano/metricas.json. Retorna (registros_validos, aviso).
+    aviso e None quando o arquivo esta ausente ou integro (R5); nesse caso a
+    secao de metricas e omitida sem nenhuma mensagem. Quando aviso nao e None,
+    o arquivo inteiro e tratado como corrompido e registros_validos vem vazio
+    (R6). Registro individual sem 'id', ou que nao e objeto, e descartado sem
+    afetar os demais nem gerar excecao (R2, R3). Nunca escreve no arquivo."""
+    if not metricas_path.exists():
+        return [], None
+    try:
+        with open(metricas_path, encoding="utf-8") as f:
+            m = json.load(f)
+    except Exception as e:
+        return [], f"JSON invalido ({e})"
+    if not isinstance(m, dict):
+        return [], "formato invalido"
+    if m.get("schema") != 1:
+        return [], f"schema {m.get('schema')} desconhecido"
+    regs = m.get("registros")
+    if not isinstance(regs, list):
+        return [], "campo 'registros' nao e uma lista"
+    validos = [r for r in regs if isinstance(r, dict) and r.get("id")]
+    return validos, None
+
+
 def _extrair_secoes(spec_path: Path) -> str:
     """Extrai as secoes ## 2. e ## 3. do arquivo de spec, sem alteracao."""
     if not spec_path.exists():
@@ -147,19 +172,16 @@ def gerar(saida: Path, raiz: Path, plano_str: str, metricas_str: str):
     # Metricas (opcional)
     metricas_path = raiz / metricas_str
     regs_por_id = {}
-    if metricas_path.exists():
-        try:
-            m = json.load(open(metricas_path, encoding="utf-8"))
-            if m.get("schema") == 1:
-                for r in m.get("registros", []):
-                    bid = r.get("id")
-                    if bid:
-                        regs_por_id.setdefault(bid, []).append(r)
-                # Ordena por timestamp_fim
-                for bid in regs_por_id:
-                    regs_por_id[bid].sort(key=lambda x: x.get("timestamp_fim", ""))
-        except Exception:
-            pass  # metricas indisponivel nao aborta
+    regs_validos, aviso_metricas = _carregar_metricas(metricas_path)
+    if aviso_metricas:
+        print(f"AVISO: metricas.json ignorado — {aviso_metricas}. O quadro do plano nao foi afetado.",
+              file=sys.stderr)
+    else:
+        for r in regs_validos:
+            regs_por_id.setdefault(r.get("id"), []).append(r)
+        # Ordena por timestamp_fim
+        for bid in regs_por_id:
+            regs_por_id[bid].sort(key=lambda x: x.get("timestamp_fim", ""))
 
     # Contagem por estado
     cont_estado = {}
