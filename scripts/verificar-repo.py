@@ -185,13 +185,21 @@ def check_plano(raiz: Path) -> list:
     except Exception as e:
         return [f"FALHA plano plano/blocos.json: JSON inválido: {e}"]
 
-    for b in data.get("blocos", []):
+    blocos = data.get("blocos", [])
+    ids_validos = {b.get("id") for b in blocos}
+
+    for b in blocos:
         bid = b.get("id", "(sem id)")
         spec = b.get("spec", "")
         if spec and not (raiz / spec).exists():
             falhas.append(
                 f"FALHA plano plano/blocos.json: bloco {bid} spec não encontrada: {spec}"
             )
+        for dep in b.get("depende_de", []) or []:
+            if dep not in ids_validos:
+                falhas.append(
+                    f"FALHA plano plano/blocos.json: bloco {bid} depende de bloco inexistente: {dep}"
+                )
 
     return falhas
 

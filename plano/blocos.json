@@ -1,625 +1,373 @@
 {
   "projeto": "maestro",
-  "maestro_versao": "1.2.0",
-  "versao_alvo": "1.3.0",
+  "maestro_versao": "1.3.1",
+  "versao_alvo": "1.4.0",
   "atualizado_em": "2026-09-08",
   "blocos": [
     {
-      "id": "F2-01",
-      "titulo": "Harness de verificacao do repositorio (verificar-repo.py)",
-      "fase": "F2",
-      "spec": "plano/specs/F2-01-harness-verificacao.md",
+      "id": "F3-01",
+      "titulo": "F-ORPHAN-CHECK: deteccao de blocos orfaos no status.py e no verificar-repo.py",
+      "fase": "F3",
+      "spec": "plano/specs/F3-01-orphan-check.md",
       "complexidade": "C3",
       "modelo": "claude-sonnet-5",
       "agente": "implementador",
       "revisor_modelo": "claude-sonnet-5",
       "depende_de": [],
       "arquivos_permitidos": [
+        "scripts/status.py",
         "scripts/verificar-repo.py",
+        "plugins/maestro/scripts/status.py",
         "plugins/maestro/scripts/verificar-repo.py"
       ],
       "criterio_aceite": [
-        "QUANDO o script roda sem argumentos O SISTEMA DEVE executar as 5 verificacoes (paridade, portabilidade, comandos-documentados, versao, plano) e sair com codigo 0 se todas passarem.",
-        "SE qualquer verificacao falhar ENTAO O SISTEMA DEVE imprimir uma linha por falha no formato 'FALHA <check> <caminho>: <motivo>' e sair com codigo 1.",
-        "QUANDO invocado com --check <nome> O SISTEMA DEVE executar apenas a verificacao de nome informado.",
-        "SE --check receber um nome inexistente ENTAO O SISTEMA DEVE listar os nomes validos e sair com codigo 2.",
-        "O SISTEMA DEVE usar apenas a biblioteca padrao do Python 3.9+ e nao invocar nenhum binario externo.",
-        "QUANDO um arquivo existe em commands/, agents/, skills/ ou scripts/ sem gemeo byte-a-byte em plugins/maestro/ O SISTEMA DEVE reportar falha na verificacao 'paridade'."
+        "QUANDO status.py roda sem argumentos sobre um plano com dependencia orfa O SISTEMA DEVE imprimir a secao '--- DEPENDENCIAS ORFAS ---' com uma linha por par bloco e dependencia.",
+        "QUANDO status.py roda sem argumentos sobre um plano sem orfaos O SISTEMA DEVE omitir a secao '--- DEPENDENCIAS ORFAS ---' por inteiro.",
+        "QUANDO um bloco tem dependencia orfa O SISTEMA DEVE marcar a linha desse bloco na listagem de fase com '<- ORFAO:' seguido dos IDs inexistentes, no lugar do sufixo de espera.",
+        "SE status.py recebe --bloco <ID> e o bloco tem dependencia orfa ENTAO O SISTEMA DEVE imprimir INEXISTENTE como estado dessa dependencia.",
+        "QUANDO verificar-repo.py --check plano roda sobre um plano com dependencia orfa O SISTEMA DEVE imprimir uma linha 'FALHA plano' por par e sair com codigo 1.",
+        "O SISTEMA DEVE manter o codigo de saida de status.py sem argumentos igual a 0 mesmo quando existem dependencias orfas.",
+        "SE um bloco tem duas ou mais dependencias orfas ENTAO O SISTEMA DEVE reportar todas, e nao apenas a primeira.",
+        "QUANDO a verificacao 'paridade' roda apos a alteracao O SISTEMA DEVE reportar zero divergencias entre as duas copias."
       ],
-      "comando_teste": "python scripts/verificar-repo.py",
+      "comando_teste": "python scripts/status.py && python scripts/verificar-repo.py --check plano && python scripts/verificar-repo.py --check paridade",
       "orcamento_turnos": 30,
       "estado": "concluido",
       "tentativas": 0,
       "bloqueado_por": null,
       "notas": [
-        "Bloco fundacional: e o comando_teste de quase todos os blocos seguintes. Sem ele os demais blocos nao tem verificacao binaria.",
-        "Concluído em 2026-09-08 — implementado diretamente."
+        "validar-plano.py ja detecta dependencia inexistente e sai 1. O furo esta no status.py, onde o bloco orfao aparece como '(espera XX-99)' e fica invisivel para sempre, e no verificar-repo.py, que nao inspeciona dependencias.",
+        "Achado no fechamento do bloco: 'verificar-repo.py --check paridade' ja saia 1 ANTES desta alteracao, por causa de CRLF vs LF entre a raiz e plugins/maestro/ em 31 arquivos nao tocados por este bloco (condicao pre-existente do checkout Windows, nao introduzida aqui). Os dois arquivos deste bloco (status.py e verificar-repo.py) foram confirmados byte-identicos entre as duas copias apos a alteracao. O comando_teste encadeado com && portanto ainda sai != 0 no estado atual do repo por causa dessa divergencia alheia; recomenda-se um bloco futuro de normalizacao de line endings (.gitattributes) para destravar 'paridade' 100%."
       ]
     },
     {
-      "id": "F2-02",
-      "titulo": "B-WIN: localizacao de scripts cross-platform (elimina find ~/)",
-      "fase": "F2",
-      "spec": "plano/specs/F2-02-win-crossplatform.md",
+      "id": "F3-02",
+      "titulo": "B-METRICAS-FALLBACK: metricas.json corrompido nao derruba o status.py",
+      "fase": "F3",
+      "spec": "plano/specs/F3-02-metricas-fallback.md",
+      "complexidade": "C2",
+      "modelo": "claude-haiku-4-5",
+      "agente": "operario",
+      "revisor_modelo": "claude-sonnet-5",
+      "depende_de": [
+        "F3-01"
+      ],
+      "arquivos_permitidos": [
+        "scripts/status.py",
+        "scripts/exportar-relatorio.py",
+        "plugins/maestro/scripts/status.py",
+        "plugins/maestro/scripts/exportar-relatorio.py"
+      ],
+      "criterio_aceite": [
+        "SE plano/metricas.json contem JSON sintaticamente invalido ENTAO O SISTEMA DEVE imprimir um aviso de uma linha, imprimir o quadro do plano por inteiro e sair com codigo 0.",
+        "SE plano/metricas.json e um JSON valido cujo campo registros contem um objeto sem a chave id ENTAO O SISTEMA DEVE descartar esse registro, processar os demais e sair com codigo 0.",
+        "SE plano/metricas.json declara schema diferente de 1 ENTAO O SISTEMA DEVE imprimir aviso e omitir a secao de metricas.",
+        "QUANDO status.py --bloco <ID> encontra metricas.json corrompido O SISTEMA DEVE imprimir o aviso em vez de seguir em silencio.",
+        "QUANDO exportar-relatorio.py encontra metricas.json corrompido O SISTEMA DEVE gravar plano/RELATORIO.md sem a secao de metricas e escrever o aviso em stderr.",
+        "SE plano/metricas.json nao existe ENTAO O SISTEMA DEVE omitir a secao de metricas sem imprimir aviso.",
+        "QUANDO plano/metricas.json esta integro O SISTEMA DEVE produzir a mesma saida que produzia antes deste bloco.",
+        "O SISTEMA DEVE deixar plano/metricas.json inalterado em todos os cenarios acima.",
+        "QUANDO a verificacao 'paridade' roda apos a alteracao O SISTEMA DEVE reportar zero divergencias entre as duas copias."
+      ],
+      "comando_teste": "python scripts/status.py && python scripts/exportar-relatorio.py && python scripts/verificar-repo.py --check paridade",
+      "orcamento_turnos": 15,
+      "estado": "pendente",
+      "tentativas": 0,
+      "bloqueado_por": null,
+      "notas": [
+        "O try de resumo_metricas cobre so o json.load; a agregacao logo abaixo usa r['id'] e r['turnos_usados'] com indexacao direta, entao um JSON valido com registro incompleto levanta KeyError fora do try e derruba o comando.",
+        "detalhe_bloco usa 'except Exception: pass' e engole a falha em silencio.",
+        "Depende de F3-01 porque os dois blocos alteram scripts/status.py; a ordem evita conflito de escrita."
+      ]
+    },
+    {
+      "id": "F3-03",
+      "titulo": "B-LOCK-MULTISESSAO (script): scripts/lock.py com criacao atomica",
+      "fase": "F3",
+      "spec": "plano/specs/F3-03-lock-script.md",
       "complexidade": "C3",
       "modelo": "claude-sonnet-5",
       "agente": "implementador",
       "revisor_modelo": "claude-opus-5",
-      "depende_de": [
-        "F2-01"
-      ],
+      "depende_de": [],
       "arquivos_permitidos": [
-        "skills/maestro-runtime/SKILL.md",
-        "plugins/maestro/skills/maestro-runtime/SKILL.md",
-        "commands/*.md",
-        "plugins/maestro/commands/*.md",
-        "skills/maestro-setup/SKILL.md",
-        "plugins/maestro/skills/maestro-setup/SKILL.md",
-        "skills/planejar-projeto/SKILL.md",
-        "plugins/maestro/skills/planejar-projeto/SKILL.md",
-        "skills/executar-bloco/SKILL.md",
-        "plugins/maestro/skills/executar-bloco/SKILL.md",
-        "skills/migrar-plano/SKILL.md",
-        "plugins/maestro/skills/migrar-plano/SKILL.md"
+        "scripts/lock.py",
+        "plugins/maestro/scripts/lock.py"
       ],
       "criterio_aceite": [
-        "QUANDO a verificacao 'portabilidade' roda O SISTEMA DEVE reportar zero ocorrencias da string 'find ~/' em commands/, agents/ e skills/, nas duas copias.",
-        "QUANDO a verificacao 'portabilidade' roda O SISTEMA DEVE reportar zero ocorrencias de 'python3 ' como comando literal em commands/, agents/ e skills/, nas duas copias.",
-        "O SISTEMA DEVE conter o arquivo skills/maestro-runtime/SKILL.md com a sequencia canonica de localizacao de script e de deteccao de interpretador.",
-        "QUANDO um comando precisa localizar um script do Maestro O SISTEMA DEVE referenciar a skill maestro-runtime em vez de repetir a sequencia de busca no proprio arquivo.",
-        "SE nenhum interpretador Python for encontrado ENTAO O SISTEMA DEVE instruir o agente a ler plano/blocos.json diretamente e nunca a inventar os numeros do quadro.",
+        "QUANDO lock.py adquirir --blocos <ID> roda sobre um plano sem lock O SISTEMA DEVE criar o arquivo de lock com os seis campos do contrato e sair com codigo 0.",
+        "SE o arquivo de lock ja existe ENTAO O SISTEMA DEVE recusar a aquisicao, imprimir a linha LOCK OCUPADO com blocos, idade e host, e sair com codigo 1 sem alterar o arquivo.",
+        "SE o arquivo de lock existe e nao e JSON valido ENTAO O SISTEMA DEVE sair com codigo 2 e deixar o arquivo intacto.",
+        "QUANDO lock.py adquirir --forcar roda sobre um lock existente O SISTEMA DEVE imprimir o conteudo antigo e substituir o arquivo, saindo com codigo 0.",
+        "QUANDO lock.py liberar --blocos <ID> roda sobre um lock cujo campo blocos e exatamente esse conjunto O SISTEMA DEVE remover o arquivo e sair com codigo 0.",
+        "SE lock.py liberar recebe um conjunto de blocos diferente do gravado no lock ENTAO O SISTEMA DEVE recusar a remocao e sair com codigo 1.",
+        "QUANDO lock.py liberar roda sobre um plano sem lock O SISTEMA DEVE imprimir LOCK LIVRE e sair com codigo 0.",
+        "QUANDO lock.py status roda sobre um plano sem lock O SISTEMA DEVE sair com codigo 0, e sobre um plano com lock DEVE sair com codigo 1.",
+        "SE a idade do lock excede lock_timeout_min ENTAO O SISTEMA DEVE imprimir a linha de possivel orfao e ainda assim sair com codigo 1.",
+        "QUANDO --fase <nome> e informado O SISTEMA DEVE operar sobre plano/<nome>/.lock.",
+        "O SISTEMA DEVE criar o arquivo de lock por uma unica chamada atomica com O_CREAT e O_EXCL, sem consultar a existencia do arquivo antes.",
+        "O SISTEMA DEVE entregar o arquivo sem nenhuma ocorrencia de os.kill, porque no Windows os.kill encaminha para TerminateProcess e mata o processo alvo.",
         "QUANDO a verificacao 'paridade' roda apos a alteracao O SISTEMA DEVE reportar zero divergencias entre as duas copias."
       ],
-      "comando_teste": "python scripts/verificar-repo.py --check portabilidade && python scripts/verificar-repo.py --check paridade",
+      "comando_teste": "python scripts/lock.py status && python scripts/verificar-repo.py --check paridade",
       "orcamento_turnos": 30,
-      "estado": "concluido",
+      "estado": "pendente",
       "tentativas": 0,
       "bloqueado_por": null,
       "notas": [
-        "Escopo ampliado alem do enunciado original: 'python3' tambem quebra no Windows. Verificado em 2026-09-08 na maquina do dono: 'python3 --version' falha, 'python --version' retorna 3.14.3.",
-        "Concluído em 2026-09-08 — implementado diretamente."
+        "Revisor Opus por causa da janela de corrida: o padrao 'verificar se existe, depois criar' e a armadilha classica e o executor tende a escreve-lo.",
+        "O PID gravado e diagnostico, nunca token de posse: cada invocacao de lock.py e um processo novo e de vida curta, entao o PID do adquirir ja esta morto no liberar. A posse e o conjunto de IDs de bloco."
       ]
     },
     {
-      "id": "F2-03",
-      "titulo": "B-VERSAO: coerencia de versao entre plugin.json, VERSAO.md e CHANGELOG.md",
-      "fase": "F2",
-      "spec": "plano/specs/F2-03-versao-coerente.md",
-      "complexidade": "C2",
-      "modelo": "claude-haiku-4-5",
-      "agente": "operario",
-      "revisor_modelo": "claude-sonnet-5",
+      "id": "F3-04",
+      "titulo": "B-LOCK-MULTISESSAO (integracao): lock no ciclo de execucao do maestro",
+      "fase": "F3",
+      "spec": "plano/specs/F3-04-lock-integracao.md",
+      "complexidade": "C4",
+      "modelo": "claude-sonnet-5",
+      "agente": "implementador",
+      "revisor_modelo": "claude-opus-5",
       "depende_de": [
-        "F2-01"
+        "F3-03"
       ],
       "arquivos_permitidos": [
-        ".claude-plugin/plugin.json",
-        "plugins/maestro/.claude-plugin/plugin.json",
-        "VERSAO.md",
-        "plugins/maestro/VERSAO.md"
+        "agents/maestro.md",
+        "commands/proxima.md",
+        "commands/retomar.md",
+        ".gitignore",
+        "plugins/maestro/agents/maestro.md",
+        "plugins/maestro/commands/proxima.md",
+        "plugins/maestro/commands/retomar.md"
       ],
       "criterio_aceite": [
-        "O SISTEMA DEVE registrar em .claude-plugin/plugin.json a mesma versao declarada no titulo da entrada mais recente de CHANGELOG.md.",
-        "QUANDO a verificacao 'versao' roda O SISTEMA DEVE reportar zero divergencias entre plugin.json, VERSAO.md e o topo do CHANGELOG.md.",
-        "SE existir mais de um plugin.json no repositorio ENTAO O SISTEMA DEVE exigir que todos declarem a mesma versao."
+        "QUANDO o agente maestro vai marcar um bloco como em_andamento O SISTEMA DEVE ter adquirido o lock do plano antes de qualquer escrita em plano/blocos.json.",
+        "SE lock.py adquirir sai com codigo diferente de 0 ENTAO O SISTEMA DEVE exibir a saida do script ao dono e encerrar sem escrever em plano/blocos.json.",
+        "QUANDO a execucao de um bloco termina com o revisor aprovando e o commit feito O SISTEMA DEVE liberar o lock.",
+        "QUANDO a execucao de um bloco termina com reprovacao, estouro de orcamento ou erro O SISTEMA DEVE liberar o lock nos tres casos.",
+        "QUANDO o maestro despacha um lote paralelo O SISTEMA DEVE adquirir um unico lock com todos os IDs do lote antes de marcar qualquer bloco do lote.",
+        "SE /maestro:proxima roda com lock.py status retornando 1 ENTAO O SISTEMA DEVE exibir o conteudo do lock e encerrar sem delegar ao agente maestro.",
+        "SE /maestro:proxima roda com --dry-run ENTAO O SISTEMA DEVE ignorar o lock, porque nada e escrito.",
+        "QUANDO /maestro:retomar encontra um bloco em em_andamento O SISTEMA DEVE consultar lock.py status e apresentar as tres situacoes do contrato antes de qualquer acao.",
+        "SE o lock existente aponta para IDs diferentes do bloco em limbo ENTAO O SISTEMA DEVE recusar a liberacao e avisar que pode haver outra sessao ativa.",
+        "O SISTEMA DEVE usar --forcar apenas apos confirmacao explicita do dono, com o conteudo do lock antigo exibido.",
+        "QUANDO --fase <nome> e passado ao comando O SISTEMA DEVE repassar --fase <nome> a lock.py.",
+        "O SISTEMA DEVE registrar plano/.lock e plano/*/.lock no .gitignore.",
+        "QUANDO as verificacoes 'paridade' e 'portabilidade' rodam apos a alteracao O SISTEMA DEVE reportar zero falhas."
       ],
-      "comando_teste": "python scripts/verificar-repo.py --check versao",
-      "orcamento_turnos": 15,
-      "estado": "concluido",
+      "comando_teste": "python scripts/lock.py status && python scripts/verificar-repo.py --check paridade && python scripts/verificar-repo.py --check portabilidade",
+      "orcamento_turnos": 30,
+      "estado": "pendente",
       "tentativas": 0,
       "bloqueado_por": null,
       "notas": [
-        "Divergencia encontrada em 2026-09-08 durante o planejamento: .claude-plugin/plugin.json declara 1.1.0 enquanto CHANGELOG.md e VERSAO.md ja estao em 1.2.0.",
-        "Concluído em 2026-09-08 — implementado diretamente."
+        "C4 pelo raio de alcance: agents/maestro.md e o nucleo de orquestracao e um lock retido apos falha trava o dono na sessao seguinte. O desenho ja esta fechado na spec F3-03; aqui e integracao com revisao Opus.",
+        "O lock e do plano, nao do bloco: o que ele protege e a escrita em blocos.json, que e um arquivo so. Por isso o lote paralelo usa um lock unico com todos os IDs."
       ]
     },
     {
-      "id": "F2-04",
-      "titulo": "B-SETUP-DEFAULTS: setup gera todos os campos obrigatorios do bloco",
-      "fase": "F2",
-      "spec": "plano/specs/F2-04-setup-defaults.md",
-      "complexidade": "C2",
-      "modelo": "claude-haiku-4-5",
-      "agente": "operario",
-      "revisor_modelo": "claude-sonnet-5",
-      "depende_de": [
-        "F2-01"
-      ],
-      "arquivos_permitidos": [
-        "skills/maestro-setup/SKILL.md",
-        "plugins/maestro/skills/maestro-setup/SKILL.md"
-      ],
-      "criterio_aceite": [
-        "QUANDO a skill maestro-setup gera um bloco novo O SISTEMA DEVE incluir os 14 campos obrigatorios listados em OBRIG no validar-plano.py.",
-        "QUANDO a skill maestro-setup gera um bloco novo O SISTEMA DEVE preencher tentativas com 0, notas com lista vazia e bloqueado_por com null.",
-        "SE o usuario nao informar o comando de teste de um bloco ENTAO O SISTEMA DEVE parar e perguntar, em vez de gravar comando_teste vazio.",
-        "QUANDO a verificacao 'paridade' roda apos a alteracao O SISTEMA DEVE reportar zero divergencias entre as duas copias."
-      ],
-      "comando_teste": "python scripts/verificar-repo.py --check paridade",
-      "orcamento_turnos": 15,
-      "estado": "concluido",
-      "tentativas": 0,
-      "bloqueado_por": null,
-      "notas": [
-        "Concluído em 2026-09-08 — implementado diretamente."
-      ]
-    },
-    {
-      "id": "F2-05",
-      "titulo": "D-SCHEMA: documentar estado bloqueado versus campo bloqueado_por",
-      "fase": "F2",
-      "spec": "plano/specs/F2-05-doc-schema-bloqueio.md",
+      "id": "F3-05",
+      "titulo": "F-SPEC-TEMPLATE: scripts/novo-bloco.py gera esqueleto de spec com 11 secoes",
+      "fase": "F3",
+      "spec": "plano/specs/F3-05-novo-bloco.md",
       "complexidade": "C2",
       "modelo": "claude-haiku-4-5",
       "agente": "operario",
       "revisor_modelo": "claude-sonnet-5",
       "depende_de": [],
       "arquivos_permitidos": [
-        "skills/planejar-projeto/references/schema-blocos.md",
-        "plugins/maestro/skills/planejar-projeto/references/schema-blocos.md"
+        "scripts/novo-bloco.py",
+        "plugins/maestro/scripts/novo-bloco.py"
       ],
       "criterio_aceite": [
-        "O SISTEMA DEVE documentar em schema-blocos.md uma secao que distingue estado igual a bloqueado de bloqueado_por preenchido, com uma frase de quando usar cada um.",
-        "O SISTEMA DEVE declarar que bloqueado_por preenchido impede o despacho mesmo com estado igual a pendente.",
-        "O SISTEMA DEVE declarar que estado igual a bloqueado sem bloqueado_por e um estado invalido e deve ser corrigido antes do despacho.",
+        "QUANDO novo-bloco.py <ID> <titulo> roda O SISTEMA DEVE gravar um arquivo em plano/specs/<ID>-<slug>.md contendo os onze titulos de secao do contrato, na ordem, e sair com codigo 0.",
+        "QUANDO o arquivo e gerado O SISTEMA DEVE incluir a linha de cabecalho com ID e titulo como primeira linha.",
+        "SE o arquivo de saida ja existe e --forcar nao foi passado ENTAO O SISTEMA DEVE sair com codigo 1 sem alterar o arquivo.",
+        "QUANDO --forcar e passado sobre um arquivo existente O SISTEMA DEVE sobrescrever e sair com codigo 0.",
+        "SE o ID ou o titulo nao forem informados ENTAO O SISTEMA DEVE imprimir a linha de uso e sair com codigo 2.",
+        "QUANDO --saida <caminho> e informado O SISTEMA DEVE gravar nesse caminho em vez do caminho padrao.",
+        "O SISTEMA DEVE incluir pelo menos um marcador de preenchimento em cada uma das onze secoes do arquivo gerado.",
+        "O SISTEMA DEVE deixar plano/blocos.json inalterado em todas as invocacoes.",
+        "QUANDO --auto-teste roda O SISTEMA DEVE verificar a presenca e a ordem dos onze titulos, apagar o arquivo temporario e sair com codigo 0.",
         "QUANDO a verificacao 'paridade' roda apos a alteracao O SISTEMA DEVE reportar zero divergencias entre as duas copias."
       ],
-      "comando_teste": "python scripts/verificar-repo.py --check paridade",
+      "comando_teste": "python scripts/novo-bloco.py --auto-teste && python scripts/verificar-repo.py --check paridade",
       "orcamento_turnos": 15,
-      "estado": "concluido",
+      "estado": "pendente",
       "tentativas": 0,
       "bloqueado_por": null,
       "notas": [
-        "Concluído em 2026-09-08 — implementado diretamente."
+        "O formato do marcador de preenchimento definido na secao 5 da spec e contrato de entrada do bloco F3-06: o linter recusa qualquer spec que ainda o contenha.",
+        "'Copiar para plugins/maestro/' se refere ao script, nao a spec gerada. O diretorio plano/ nao e espelhado e a verificacao de paridade cobre apenas commands, agents, skills e scripts."
       ]
     },
     {
-      "id": "F2-06",
-      "titulo": "F-DESTRAVAR: comando /maestro:destravar <ID>",
-      "fase": "F2",
-      "spec": "plano/specs/F2-06-destravar.md",
+      "id": "F3-06",
+      "titulo": "F-LINT-SPEC: scripts/lint-spec.py valida estrutura da spec",
+      "fase": "F3",
+      "spec": "plano/specs/F3-06-lint-spec.md",
+      "complexidade": "C3",
+      "modelo": "claude-sonnet-5",
+      "agente": "implementador",
+      "revisor_modelo": "claude-sonnet-5",
+      "depende_de": [
+        "F3-05"
+      ],
+      "arquivos_permitidos": [
+        "scripts/lint-spec.py",
+        "plugins/maestro/scripts/lint-spec.py"
+      ],
+      "criterio_aceite": [
+        "QUANDO lint-spec.py recebe uma spec com as onze secoes, tres ou mais criterios EARS e as secoes 4 e 11 preenchidas O SISTEMA DEVE imprimir OK seguido do caminho e sair com codigo 0.",
+        "SE a spec nao tem alguma das onze secoes ENTAO O SISTEMA DEVE imprimir uma violacao L1 por secao ausente e sair com codigo 1.",
+        "SE as onze secoes estao presentes mas fora da ordem ENTAO O SISTEMA DEVE imprimir violacao L1 e sair com codigo 1.",
+        "SE a spec contem o marcador de preenchimento emitido por novo-bloco.py ENTAO O SISTEMA DEVE imprimir violacao L2 e sair com codigo 1.",
+        "SE a secao 9 tem menos de tres itens ENTAO O SISTEMA DEVE imprimir violacao L3 e sair com codigo 1.",
+        "SE algum item da secao 9 nao contem nenhum marcador EARS ENTAO O SISTEMA DEVE imprimir violacao L3 identificando o item.",
+        "SE a secao 4 tem menos de dois itens, ou item com menos de vinte caracteres, ou item da lista de genericos ENTAO O SISTEMA DEVE imprimir violacao L4 e sair com codigo 1.",
+        "SE a secao 11 tem item sem seta e que nao comeca com SE ENTAO O SISTEMA DEVE imprimir violacao L5 e sair com codigo 1.",
+        "SE alguma das onze secoes nao tem nenhuma linha de conteudo ENTAO O SISTEMA DEVE imprimir violacao L6 e sair com codigo 1.",
+        "QUANDO o arquivo passado nao existe O SISTEMA DEVE sair com codigo 2.",
+        "QUANDO lint-spec.py roda sobre o esqueleto recem-gerado por novo-bloco.py O SISTEMA DEVE sair com codigo 1, reportando ao menos a violacao L2.",
+        "QUANDO lint-spec.py roda sobre as nove specs de plano/specs/F3-*.md O SISTEMA DEVE sair com codigo 0.",
+        "O SISTEMA DEVE deixar todos os arquivos de entrada inalterados.",
+        "QUANDO a verificacao 'paridade' roda apos a alteracao O SISTEMA DEVE reportar zero divergencias entre as duas copias."
+      ],
+      "comando_teste": "python scripts/lint-spec.py plano/specs/F3-06-lint-spec.md && python scripts/verificar-repo.py --check paridade",
+      "orcamento_turnos": 30,
+      "estado": "pendente",
+      "tentativas": 0,
+      "bloqueado_por": null,
+      "notas": [
+        "A definicao de 'generico' e o coracao do bloco e esta fixada na secao 5 da spec como duas listas literais. Sem elas o executor inventa o criterio e o linter recusa spec legitima.",
+        "As nove specs F3 foram escritas para passar nas seis regras. Se alguma reprovar, a regra ou a spec esta errada e a decisao e do arquiteto."
+      ]
+    },
+    {
+      "id": "F3-07",
+      "titulo": "F-LINT-SPEC (integracao): /maestro:editar roda o linter ao gravar a spec",
+      "fase": "F3",
+      "spec": "plano/specs/F3-07-editar-lint.md",
       "complexidade": "C2",
-      "modelo": "claude-sonnet-5",
-      "agente": "implementador",
+      "modelo": "claude-haiku-4-5",
+      "agente": "operario",
       "revisor_modelo": "claude-sonnet-5",
       "depende_de": [
-        "F2-02",
-        "F2-05"
-      ],
-      "arquivos_permitidos": [
-        "commands/destravar.md",
-        "plugins/maestro/commands/destravar.md"
-      ],
-      "criterio_aceite": [
-        "QUANDO o comando recebe um ID cujo bloco tem bloqueado_por preenchido O SISTEMA DEVE exibir o motivo do bloqueio e pedir confirmacao explicita antes de alterar o arquivo.",
-        "QUANDO o usuario confirma O SISTEMA DEVE gravar bloqueado_por igual a null, estado igual a pendente e acrescentar uma nota com a data e o motivo removido.",
-        "SE o bloco informado nao tiver bloqueado_por nem estado bloqueado ENTAO O SISTEMA DEVE recusar a operacao e nao gravar nada.",
-        "SE o ID informado nao existir em plano/blocos.json ENTAO O SISTEMA DEVE listar os IDs bloqueados e nao gravar nada.",
-        "SE o usuario nao confirmar ENTAO O SISTEMA DEVE encerrar sem escrever em plano/blocos.json.",
-        "O SISTEMA DEVE deixar tentativas inalterado."
-      ],
-      "comando_teste": "python scripts/verificar-repo.py --check paridade && python scripts/verificar-repo.py --check comandos-documentados",
-      "orcamento_turnos": 15,
-      "estado": "concluido",
-      "tentativas": 0,
-      "bloqueado_por": null,
-      "notas": [
-        "Concluído em 2026-09-08 — implementado diretamente."
-      ]
-    },
-    {
-      "id": "F2-07",
-      "titulo": "F-METRICAS: contrato de plano/metricas.json e gravacao pelo maestro",
-      "fase": "F2",
-      "spec": "plano/specs/F2-07-metricas.md",
-      "complexidade": "C3",
-      "modelo": "claude-sonnet-5",
-      "agente": "implementador",
-      "revisor_modelo": "claude-opus-5",
-      "depende_de": [
-        "F2-02"
-      ],
-      "arquivos_permitidos": [
-        "agents/maestro.md",
-        "plugins/maestro/agents/maestro.md",
-        "commands/status.md",
-        "plugins/maestro/commands/status.md",
-        "scripts/status.py",
-        "plugins/maestro/scripts/status.py",
-        "skills/planejar-projeto/references/schema-metricas.md",
-        "plugins/maestro/skills/planejar-projeto/references/schema-metricas.md"
-      ],
-      "criterio_aceite": [
-        "QUANDO um bloco muda para concluido O SISTEMA DEVE acrescentar um registro em plano/metricas.json com os 11 campos do contrato da secao 5 da spec.",
-        "QUANDO um bloco e reprovado pelo revisor O SISTEMA DEVE acrescentar um registro com veredito igual a reprovado, em vez de sobrescrever o registro anterior.",
-        "SE plano/metricas.json nao existir no momento da gravacao ENTAO O SISTEMA DEVE cria-lo com schema igual a 1 e registros igual a lista vazia antes de acrescentar.",
-        "SE plano/metricas.json existir com JSON invalido ENTAO O SISTEMA DEVE parar, reportar ao usuario e nao sobrescrever o arquivo.",
-        "O SISTEMA DEVE gravar timestamp_inicio e timestamp_fim em ISO 8601 com sufixo Z.",
-        "SE nenhum commit foi feito para o bloco ENTAO O SISTEMA DEVE gravar commit_sha igual a null em vez de omitir o campo.",
-        "ONDE plano/metricas.json existir O SISTEMA DEVE fazer o status.py imprimir um resumo com total de blocos medidos, turnos usados sobre orcados e contagem de reprovacoes.",
-        "ONDE plano/metricas.json nao existir O SISTEMA DEVE omitir a secao de metricas sem emitir erro.",
-        "O SISTEMA DEVE tratar plano/metricas.json como append-only e nunca remover registros existentes."
-      ],
-      "comando_teste": "python scripts/verificar-repo.py --check paridade && python scripts/status.py",
-      "orcamento_turnos": 30,
-      "estado": "concluido",
-      "tentativas": 0,
-      "bloqueado_por": null,
-      "notas": [
-        "commit_sha entra aqui porque F2-10 (rollback) depende de saber qual commit reverter. Hoje nada registra o SHA por bloco.",
-        "Concluído em 2026-09-08 — implementado diretamente."
-      ]
-    },
-    {
-      "id": "F2-08",
-      "titulo": "F-STATUS-BLOCO: /maestro:status --bloco <ID>",
-      "fase": "F2",
-      "spec": "plano/specs/F2-08-status-bloco.md",
-      "complexidade": "C3",
-      "modelo": "claude-sonnet-5",
-      "agente": "implementador",
-      "revisor_modelo": "claude-sonnet-5",
-      "depende_de": [
-        "F2-07"
-      ],
-      "arquivos_permitidos": [
-        "commands/status.md",
-        "plugins/maestro/commands/status.md",
-        "scripts/status.py",
-        "plugins/maestro/scripts/status.py"
-      ],
-      "criterio_aceite": [
-        "QUANDO status.py recebe --bloco <ID> O SISTEMA DEVE imprimir id, titulo, complexidade, estado, modelo, revisor_modelo, caminho da spec, comando_teste, tentativas, orcamento_turnos, dependencias com o estado de cada uma, arquivos_permitidos, criterios de aceite numerados e notas.",
-        "QUANDO status.py recebe --bloco <ID> O SISTEMA DEVE imprimir o quadro do bloco e nao o quadro geral do plano.",
-        "SE o ID informado nao existir ENTAO O SISTEMA DEVE imprimir 'bloco nao encontrado' seguido dos IDs validos e sair com codigo 1.",
-        "ONDE existir registro do bloco em plano/metricas.json O SISTEMA DEVE imprimir turnos usados sobre orcados, tentativas medidas e veredito de cada registro.",
-        "SE o bloco tiver bloqueado_por preenchido ENTAO O SISTEMA DEVE imprimir o motivo em destaque e sugerir /maestro:destravar.",
-        "O SISTEMA DEVE manter o comportamento atual de status.py sem argumentos inalterado."
-      ],
-      "comando_teste": "python scripts/status.py --bloco F2-01 && python scripts/verificar-repo.py --check paridade",
-      "orcamento_turnos": 30,
-      "estado": "concluido",
-      "tentativas": 0,
-      "bloqueado_por": null,
-      "notas": [
-        "Concluído em 2026-09-08 — implementado diretamente."
-      ]
-    },
-    {
-      "id": "F2-09",
-      "titulo": "F-EDITAR: comando /maestro:editar <ID>",
-      "fase": "F2",
-      "spec": "plano/specs/F2-09-editar.md",
-      "complexidade": "C3",
-      "modelo": "claude-sonnet-5",
-      "agente": "implementador",
-      "revisor_modelo": "claude-sonnet-5",
-      "depende_de": [
-        "F2-02"
+        "F3-06"
       ],
       "arquivos_permitidos": [
         "commands/editar.md",
         "plugins/maestro/commands/editar.md"
       ],
       "criterio_aceite": [
-        "QUANDO o comando recebe um ID O SISTEMA DEVE exibir o caminho da spec e as duas vias disponiveis: ajuste pontual e regeracao pelo arquiteto.",
-        "QUANDO o usuario escolhe ajuste pontual O SISTEMA DEVE aplicar apenas as alteracoes que o usuario descreveu e nao reescrever secoes nao mencionadas.",
-        "QUANDO o usuario escolhe regeracao O SISTEMA DEVE despachar o agente arquiteto e gravar a nova spec no mesmo caminho, preservando o arquivo anterior como <spec>.bak.",
-        "SE o bloco estiver com estado concluido ENTAO O SISTEMA DEVE avisar que a spec ja foi executada e pedir confirmacao antes de editar.",
-        "SE o bloco estiver com estado em_andamento ENTAO O SISTEMA DEVE recusar a edicao e mandar rodar /maestro:retomar primeiro.",
-        "QUANDO a spec e alterada O SISTEMA DEVE rodar validar-plano.py ao final e reportar o resultado.",
-        "O SISTEMA DEVE deixar estado e tentativas do bloco inalterados."
+        "QUANDO /maestro:editar termina de gravar uma spec por qualquer das duas vias O SISTEMA DEVE rodar lint-spec.py sobre o caminho gravado antes de rodar validar-plano.py.",
+        "SE lint-spec.py sai com codigo 1 ENTAO O SISTEMA DEVE exibir todas as violacoes na integra e perguntar ao dono se deve corrigir.",
+        "SE o dono nao autoriza a correcao ENTAO O SISTEMA DEVE encerrar deixando a spec gravada como esta.",
+        "SE lint-spec.py sai com codigo 0 ENTAO O SISTEMA DEVE informar que a spec e valida e prosseguir.",
+        "SE o linter nao puder ser executado ENTAO O SISTEMA DEVE informar o fato e prosseguir para validar-plano.py em vez de encerrar com erro.",
+        "QUANDO a via de regeracao e usada O SISTEMA DEVE rodar o linter sobre o arquivo novo e nunca sobre o arquivo .bak.",
+        "O SISTEMA DEVE deixar estado e tentativas do bloco inalterados em todos os caminhos.",
+        "QUANDO as verificacoes 'paridade', 'portabilidade' e 'comandos-documentados' rodam apos a alteracao O SISTEMA DEVE reportar zero falhas."
       ],
-      "comando_teste": "python scripts/verificar-repo.py --check paridade && python scripts/verificar-repo.py --check comandos-documentados",
-      "orcamento_turnos": 30,
-      "estado": "concluido",
+      "comando_teste": "python scripts/verificar-repo.py --check paridade && python scripts/verificar-repo.py --check portabilidade && python scripts/verificar-repo.py --check comandos-documentados",
+      "orcamento_turnos": 15,
+      "estado": "pendente",
       "tentativas": 0,
       "bloqueado_por": null,
       "notas": [
-        "Concluído em 2026-09-08 — implementado diretamente."
+        "O linter e informativo aqui: reprovacao nao reverte a spec gravada nem impede o comando de terminar. O portao duro continua sendo o revisor no momento da execucao do bloco."
       ]
     },
     {
-      "id": "F2-10",
-      "titulo": "F-ROLLBACK: comando /maestro:rollback <ID>",
-      "fase": "F2",
-      "spec": "plano/specs/F2-10-rollback.md",
-      "complexidade": "C4",
-      "modelo": "claude-sonnet-5",
-      "agente": "implementador",
-      "revisor_modelo": "claude-opus-5",
-      "depende_de": [
-        "F2-07"
-      ],
-      "arquivos_permitidos": [
-        "commands/rollback.md",
-        "plugins/maestro/commands/rollback.md"
-      ],
-      "criterio_aceite": [
-        "QUANDO o comando recebe um ID O SISTEMA DEVE localizar o commit_sha do bloco em plano/metricas.json e exibir o resumo de git show --stat antes de qualquer alteracao.",
-        "O SISTEMA DEVE usar git revert e nunca git reset, git checkout -- nem git clean.",
-        "SE o bloco nao tiver commit_sha em plano/metricas.json ENTAO O SISTEMA DEVE recusar a operacao e instruir o usuario a reverter manualmente.",
-        "SE a arvore de trabalho tiver alteracoes nao commitadas ENTAO O SISTEMA DEVE recusar a operacao e nao tocar no git.",
-        "SE existirem commits posteriores que alteram os mesmos arquivos do commit alvo ENTAO O SISTEMA DEVE listar esses commits e pedir confirmacao explicita antes de reverter.",
-        "SE git revert terminar em conflito ENTAO O SISTEMA DEVE rodar git revert --abort, deixar o repositorio no estado anterior e nao alterar plano/blocos.json.",
-        "QUANDO o revert conclui sem conflito O SISTEMA DEVE gravar estado igual a pendente, deixar tentativas inalterado e acrescentar uma nota com o SHA revertido e a data.",
-        "O SISTEMA DEVE pedir confirmacao explicita do usuario antes de executar o git revert em todos os casos."
-      ],
-      "comando_teste": "python scripts/verificar-repo.py --check paridade && python scripts/verificar-repo.py --check comandos-documentados",
-      "orcamento_turnos": 30,
-      "estado": "concluido",
-      "tentativas": 0,
-      "bloqueado_por": null,
-      "notas": [
-        "C4 por incerteza de design em torno de commits posteriores. O desenho foi fechado nesta spec pelo arquiteto; a implementacao e Sonnet com revisao Opus.",
-        "Concluído em 2026-09-08 — implementado diretamente."
-      ]
-    },
-    {
-      "id": "F2-11",
-      "titulo": "F-EXPORTAR: comando /maestro:exportar gera plano/RELATORIO.md",
-      "fase": "F2",
-      "spec": "plano/specs/F2-11-exportar.md",
-      "complexidade": "C3",
-      "modelo": "claude-sonnet-5",
-      "agente": "implementador",
-      "revisor_modelo": "claude-sonnet-5",
-      "depende_de": [
-        "F2-07"
-      ],
-      "arquivos_permitidos": [
-        "commands/exportar.md",
-        "plugins/maestro/commands/exportar.md",
-        "scripts/exportar-relatorio.py",
-        "plugins/maestro/scripts/exportar-relatorio.py"
-      ],
-      "criterio_aceite": [
-        "QUANDO o comando roda O SISTEMA DEVE gerar plano/RELATORIO.md contendo capa com nome do projeto e data, quadro resumo por estado, e uma secao por bloco.",
-        "QUANDO gera a secao de um bloco O SISTEMA DEVE incluir id, titulo, complexidade, estado, dependencias e os criterios de aceite integrais.",
-        "ONDE plano/metricas.json existir O SISTEMA DEVE incluir uma secao de metricas com turnos usados sobre orcados por bloco e o total.",
-        "SE plano/RELATORIO.md ja existir ENTAO O SISTEMA DEVE sobrescreve-lo sem perguntar, porque o arquivo e derivado.",
-        "O SISTEMA DEVE gerar o relatorio apenas a partir de plano/blocos.json, dos arquivos de spec e de plano/metricas.json, sem consultar o git nem inventar texto.",
-        "SE um arquivo de spec referenciado nao existir ENTAO O SISTEMA DEVE escrever 'spec ausente' naquela secao e continuar."
-      ],
-      "comando_teste": "python scripts/exportar-relatorio.py && python scripts/verificar-repo.py --check paridade",
-      "orcamento_turnos": 30,
-      "estado": "concluido",
-      "tentativas": 0,
-      "bloqueado_por": null,
-      "notas": [
-        "Concluído em 2026-09-08 — implementado diretamente."
-      ]
-    },
-    {
-      "id": "F2-12",
-      "titulo": "F-MULTIFASE (desenho): contrato de resolucao do arquivo de plano",
-      "fase": "F2",
-      "spec": "plano/specs/F2-12-multifase-desenho.md",
-      "complexidade": "C4",
-      "modelo": "claude-opus-5",
-      "agente": "arquiteto",
-      "revisor_modelo": "claude-opus-5",
-      "depende_de": [
-        "F2-06",
-        "F2-08",
-        "F2-09",
-        "F2-10",
-        "F2-11"
-      ],
-      "arquivos_permitidos": [
-        "plano/specs/F2-13-multifase-impl.md",
-        "skills/planejar-projeto/references/schema-blocos.md",
-        "plugins/maestro/skills/planejar-projeto/references/schema-blocos.md"
-      ],
-      "criterio_aceite": [
-        "O SISTEMA DEVE produzir plano/specs/F2-13-multifase-impl.md com as 11 secoes do gabarito de anatomia-da-spec.md preenchidas.",
-        "O SISTEMA DEVE definir a ordem de precedencia de resolucao do arquivo de plano em no maximo 4 regras numeradas e mutuamente exclusivas.",
-        "O SISTEMA DEVE definir o comportamento para plano/blocos.json legado sem diretorio de fase, garantindo que planos da v1.2 continuem funcionando sem migracao.",
-        "O SISTEMA DEVE definir como dependencias entre blocos de fases diferentes sao declaradas e validadas.",
-        "SE duas fases declararem o mesmo id de bloco ENTAO a spec DEVE definir o comportamento como erro de validacao, e nao como resolucao silenciosa.",
-        "O SISTEMA DEVE listar nominalmente todos os arquivos de comando que a implementacao precisa alterar.",
-        "O SISTEMA DEVE definir o comportamento de --fase ausente quando existe mais de uma fase."
-      ],
-      "comando_teste": "python scripts/validar-plano.py",
-      "orcamento_turnos": 30,
-      "estado": "concluido",
-      "tentativas": 0,
-      "bloqueado_por": null,
-      "notas": [
-        "Bloco de desenho de um C4 quebrado em desenho + implementacao (F2-13). O aviso do validador sobre 'C4 inteiro no modelo forte' e falso positivo aqui: o desenho e Opus, a implementacao e Sonnet.",
-        "Depende de todos os comandos novos porque --fase precisa ser adicionado ao conjunto final de comandos, nao a um conjunto parcial.",
-        "Concluído em 2026-09-08 — spec F2-13 escrita, schema-blocos.md atualizado com layout multifase."
-      ]
-    },
-    {
-      "id": "F2-13",
-      "titulo": "F-MULTIFASE (implementacao): --fase em todos os comandos",
-      "fase": "F2",
-      "spec": "plano/specs/F2-13-multifase-impl.md",
-      "complexidade": "C4",
-      "modelo": "claude-sonnet-5",
-      "agente": "implementador",
-      "revisor_modelo": "claude-opus-5",
-      "depende_de": [
-        "F2-12"
-      ],
-      "arquivos_permitidos": [
-        "commands/*.md",
-        "plugins/maestro/commands/*.md",
-        "scripts/*.py",
-        "plugins/maestro/scripts/*.py",
-        "agents/maestro.md",
-        "plugins/maestro/agents/maestro.md",
-        "skills/maestro-setup/SKILL.md",
-        "plugins/maestro/skills/maestro-setup/SKILL.md"
-      ],
-      "criterio_aceite": [
-        "QUANDO um comando recebe --fase <nome> O SISTEMA DEVE operar sobre plano/<nome>/blocos.json.",
-        "SE --fase for omitido e existir plano/blocos.json ENTAO O SISTEMA DEVE operar sobre plano/blocos.json sem exigir argumento.",
-        "SE --fase for omitido e existir mais de um diretorio de fase sem plano/blocos.json ENTAO O SISTEMA DEVE listar as fases disponiveis e sair com codigo 1 sem escrever nada.",
-        "SE --fase apontar para uma fase inexistente ENTAO O SISTEMA DEVE listar as fases existentes e sair com codigo 1.",
-        "SE o mesmo id de bloco aparecer em duas fases ENTAO validar-plano.py DEVE reportar erro e sair com codigo 1.",
-        "QUANDO validar-plano.py roda sem --fase sobre um plano legado da v1.2 O SISTEMA DEVE produzir o mesmo resultado que produzia antes desta alteracao.",
-        "QUANDO a verificacao 'paridade' roda apos a alteracao O SISTEMA DEVE reportar zero divergencias entre as duas copias."
-      ],
-      "comando_teste": "python scripts/validar-plano.py && python scripts/verificar-repo.py",
-      "orcamento_turnos": 30,
-      "estado": "concluido",
-      "tentativas": 0,
-      "bloqueado_por": null,
-      "notas": [
-        "Concluído em 2026-09-08 — _resolve_plano() adicionado a 3 scripts, --fase adicionado a 12 commands + cópias, verificar-repo.py 0 falhas."
-      ]
-    },
-    {
-      "id": "F2-14",
-      "titulo": "F-PARALELO (desenho): contrato de despacho simultaneo e deteccao de conflito",
-      "fase": "F2",
-      "spec": "plano/specs/F2-14-paralelo-desenho.md",
-      "complexidade": "C5",
-      "modelo": "claude-opus-5",
-      "agente": "arquiteto",
-      "revisor_modelo": "claude-opus-5",
-      "depende_de": [
-        "F2-07",
-        "F2-13"
-      ],
-      "arquivos_permitidos": [
-        "plano/specs/F2-15-paralelo-impl.md"
-      ],
-      "criterio_aceite": [
-        "O SISTEMA DEVE produzir plano/specs/F2-15-paralelo-impl.md com as 11 secoes do gabarito de anatomia-da-spec.md preenchidas.",
-        "O SISTEMA DEVE definir o predicado de elegibilidade para execucao simultanea como uma conjuncao de condicoes numeradas e verificaveis uma a uma.",
-        "O SISTEMA DEVE especificar o algoritmo de disjuncao de arquivos_permitidos, incluindo o tratamento de globs com ** e de globs que se sobrepoem parcialmente.",
-        "SE a disjuncao entre dois conjuntos de globs nao puder ser provada ENTAO a spec DEVE determinar serializacao, nunca execucao simultanea.",
-        "A spec DEVE proibir execucao simultanea de qualquer bloco de complexidade C5.",
-        "A spec DEVE definir a fase de commit como serializada, com no maximo um bloco commitando por vez.",
-        "A spec DEVE definir um teto de paralelismo com valor padrao numerico e o campo de configuracao que o altera.",
-        "SE qualquer bloco do lote paralelo falhar ENTAO a spec DEVE definir o destino dos blocos restantes sem deixar nenhum em estado em_andamento orfao.",
-        "A spec DEVE conter uma secao de red-team com no minimo 8 cenarios de corrida ou conflito e a resposta do sistema a cada um.",
-        "A spec DEVE definir o comportamento em caso de interrupcao da sessao no meio de um lote paralelo, de forma que /maestro:retomar reconstrua o estado."
-      ],
-      "comando_teste": "python scripts/validar-plano.py",
-      "orcamento_turnos": 40,
-      "estado": "concluido",
-      "tentativas": 0,
-      "bloqueado_por": null,
-      "notas": [
-        "C5 porque o erro e irreversivel na pratica: dois agentes escrevendo o mesmo arquivo corrompem trabalho ja aprovado e o dono so descobre depois do commit.",
-        "Regra de projeto: falha fecha para o lado seguro, ou seja, serializa.",
-        "Concluido em 2026-09-08 — spec F2-15 escrita com 11 secoes, predicado C1-C6, algoritmo disjoint() com memoizacao, red-team 8 cenarios."
-      ]
-    },
-    {
-      "id": "F2-15",
-      "titulo": "F-PARALELO (implementacao): despacho simultaneo no maestro.md",
-      "fase": "F2",
-      "spec": "plano/specs/F2-15-paralelo-impl.md",
-      "complexidade": "C4",
-      "modelo": "claude-sonnet-5",
-      "agente": "implementador",
-      "revisor_modelo": "claude-opus-5",
-      "depende_de": [
-        "F2-14"
-      ],
-      "arquivos_permitidos": [
-        "agents/maestro.md",
-        "plugins/maestro/agents/maestro.md",
-        "commands/proxima.md",
-        "plugins/maestro/commands/proxima.md",
-        "scripts/paralelo.py",
-        "plugins/maestro/scripts/paralelo.py"
-      ],
-      "criterio_aceite": [
-        "QUANDO paralelo.py roda sobre um plano O SISTEMA DEVE imprimir os lotes elegiveis para execucao simultanea, um lote por linha.",
-        "SE dois blocos liberados tiverem globs de arquivos_permitidos que se sobrepoem ENTAO O SISTEMA DEVE colocar cada um em um lote separado.",
-        "SE um bloco liberado for de complexidade C5 ENTAO O SISTEMA DEVE coloca-lo sozinho em um lote.",
-        "SE um bloco tiver bloqueado_por preenchido ENTAO O SISTEMA DEVE exclui-lo de todos os lotes.",
-        "O SISTEMA DEVE limitar cada lote ao teto de paralelismo definido na spec de desenho.",
-        "QUANDO o maestro despacha um lote O SISTEMA DEVE marcar todos os blocos do lote como em_andamento antes de invocar qualquer agente.",
-        "SE um bloco do lote falhar ENTAO O SISTEMA DEVE concluir os demais e reportar o lote inteiro ao usuario, sem deixar nenhum bloco em em_andamento.",
-        "O SISTEMA DEVE serializar a fase de commit, com no maximo um commit em andamento por vez.",
-        "SE paralelo.py nao conseguir provar a disjuncao de dois blocos ENTAO O SISTEMA DEVE separa-los em lotes distintos."
-      ],
-      "comando_teste": "python scripts/paralelo.py && python scripts/verificar-repo.py",
-      "orcamento_turnos": 30,
-      "estado": "concluido",
-      "tentativas": 0,
-      "bloqueado_por": null,
-      "notas": [
-        "Concluido em 2026-09-08 — paralelo.py com algoritmo disjoint() memoizado, maestro.md ciclo de lote, proxima.md --paralelo, verificar-repo 5/5."
-      ]
-    },
-    {
-      "id": "F2-16",
-      "titulo": "D-INSTALACAO: lista completa de comandos em INSTALACAO-USUARIO.md",
-      "fase": "F2",
-      "spec": "plano/specs/F2-16-doc-instalacao.md",
+      "id": "F3-08",
+      "titulo": "F-HELP: comando /maestro:help com inicio rapido e referencia completa",
+      "fase": "F3",
+      "spec": "plano/specs/F3-08-help.md",
       "complexidade": "C2",
       "modelo": "claude-haiku-4-5",
       "agente": "operario",
       "revisor_modelo": "claude-sonnet-5",
       "depende_de": [
-        "F2-06",
-        "F2-08",
-        "F2-09",
-        "F2-10",
-        "F2-11"
+        "F3-04",
+        "F3-07"
       ],
       "arquivos_permitidos": [
+        "commands/help.md",
         "INSTALACAO-USUARIO.md",
-        "plugins/maestro/INSTALACAO-USUARIO.md"
+        "skills/maestro-setup/SKILL.md",
+        "plugins/maestro/commands/help.md",
+        "plugins/maestro/INSTALACAO-USUARIO.md",
+        "plugins/maestro/skills/maestro-setup/SKILL.md"
       ],
       "criterio_aceite": [
-        "O SISTEMA DEVE listar em INSTALACAO-USUARIO.md um item por arquivo existente em commands/, com o nome do comando e uma linha de descricao.",
-        "O SISTEMA DEVE declarar a quantidade de comandos por extenso e essa quantidade DEVE ser igual ao numero de arquivos em commands/.",
-        "QUANDO a verificacao 'comandos-documentados' roda O SISTEMA DEVE reportar zero divergencias entre a lista do documento e o conteudo de commands/.",
-        "QUANDO a verificacao 'paridade' roda apos a alteracao O SISTEMA DEVE reportar zero divergencias entre as duas copias."
+        "O SISTEMA DEVE conter o arquivo commands/help.md com frontmatter contendo description e argument-hint.",
+        "O SISTEMA DEVE conter em commands/help.md as quatro secoes com os titulos literais definidos na secao 5 da spec, nesta ordem.",
+        "QUANDO a primeira secao de commands/help.md e lida O SISTEMA DEVE apresentar exatamente tres passos numerados, cada um com o comando a rodar.",
+        "O SISTEMA DEVE listar na secao de referencia uma entrada por arquivo existente em commands/, sem omissao e sem entrada extra.",
+        "O SISTEMA DEVE limitar o grupo de dia a dia da secao de referencia a no maximo quatro entradas.",
+        "SE os argumentos contem o nome de um comando existente ENTAO O SISTEMA DEVE exibir apenas a entrada daquele comando.",
+        "SE os argumentos contem um nome que nao existe em commands/ ENTAO O SISTEMA DEVE listar os nomes validos.",
+        "O SISTEMA DEVE mencionar /maestro:help em INSTALACAO-USUARIO.md e em skills/maestro-setup/SKILL.md.",
+        "O SISTEMA DEVE declarar em INSTALACAO-USUARIO.md a quantidade de comandos por extenso, e essa quantidade DEVE ser igual ao numero de arquivos .md em commands/.",
+        "QUANDO a verificacao 'comandos-documentados' roda apos a alteracao O SISTEMA DEVE reportar zero divergencias.",
+        "QUANDO as verificacoes 'paridade' e 'portabilidade' rodam apos a alteracao O SISTEMA DEVE reportar zero falhas.",
+        "O SISTEMA DEVE listar na secao de skills e scripts uma linha por diretorio de skills/ e uma linha por arquivo de scripts/."
       ],
-      "comando_teste": "python scripts/verificar-repo.py --check comandos-documentados && python scripts/verificar-repo.py --check paridade",
+      "comando_teste": "python scripts/verificar-repo.py --check comandos-documentados && python scripts/verificar-repo.py --check paridade && python scripts/verificar-repo.py --check portabilidade",
       "orcamento_turnos": 15,
-      "estado": "concluido",
+      "estado": "pendente",
       "tentativas": 0,
       "bloqueado_por": null,
       "notas": [
-        "O enunciado original pedia 'cinco para oito'. Como este bloco roda depois dos comandos novos, a contagem correta e derivada de commands/, nao fixada no texto do pedido.",
-        "Concluído em 2026-09-08 — implementado diretamente."
+        "Criar commands/help.md quebra a verificacao 'comandos-documentados' se INSTALACAO-USUARIO.md e skills/maestro-setup/SKILL.md nao mencionarem /maestro:help. Por isso os tres arquivos estao no mesmo bloco.",
+        "Depende de F3-04 e F3-07 para que o texto seja escrito contra o conjunto final de comandos e o comportamento final de /maestro:proxima e /maestro:editar, e nao precise ser reescrito depois."
       ]
     },
     {
-      "id": "F2-17",
-      "titulo": "D-SETUP-STEP5: passo 5 da skill maestro-setup lista todos os comandos",
-      "fase": "F2",
-      "spec": "plano/specs/F2-17-doc-setup-step5.md",
+      "id": "F3-09",
+      "titulo": "Fechamento da fase: versao 1.4.0 coerente e entrada no CHANGELOG",
+      "fase": "F3",
+      "spec": "plano/specs/F3-09-release-140.md",
       "complexidade": "C2",
       "modelo": "claude-haiku-4-5",
       "agente": "operario",
       "revisor_modelo": "claude-sonnet-5",
       "depende_de": [
-        "F2-06",
-        "F2-08",
-        "F2-09",
-        "F2-10",
-        "F2-11"
+        "F3-01",
+        "F3-02",
+        "F3-04",
+        "F3-06",
+        "F3-07",
+        "F3-08"
       ],
       "arquivos_permitidos": [
-        "skills/maestro-setup/SKILL.md",
-        "plugins/maestro/skills/maestro-setup/SKILL.md"
+        ".claude-plugin/plugin.json",
+        "plugins/maestro/.claude-plugin/plugin.json",
+        "VERSAO.md",
+        "plugins/maestro/VERSAO.md",
+        "CHANGELOG.md",
+        "plugins/maestro/CHANGELOG.md",
+        "maestro.config.json"
       ],
       "criterio_aceite": [
-        "O SISTEMA DEVE listar no passo de fechamento da skill maestro-setup um item por arquivo existente em commands/.",
-        "O SISTEMA DEVE separar a lista em acoes do dia a dia e acoes de correcao, com no maximo 4 itens no primeiro grupo.",
-        "QUANDO a verificacao 'comandos-documentados' roda O SISTEMA DEVE reportar zero divergencias entre a lista do passo de fechamento e o conteudo de commands/.",
-        "QUANDO a verificacao 'paridade' roda apos a alteracao O SISTEMA DEVE reportar zero divergencias entre as duas copias."
+        "O SISTEMA DEVE declarar 1.4.0 em todo plugin.json do repositorio.",
+        "O SISTEMA DEVE declarar 1.4.0 como primeiro numero no formato x.y.z de VERSAO.md e das suas copias.",
+        "O SISTEMA DEVE declarar 1.4.0 no titulo da entrada do topo do CHANGELOG.md.",
+        "O SISTEMA DEVE declarar 1.4.0 no campo maestro_versao de maestro.config.json.",
+        "QUANDO a verificacao 'versao' roda O SISTEMA DEVE reportar zero divergencias entre todos os arquivos da tabela do contrato.",
+        "QUANDO a entrada do CHANGELOG.md e escrita O SISTEMA DEVE incluir uma linha por funcionalidade concluida da fase F3.",
+        "SE algum bloco da fase F3 nao estiver com estado concluido ENTAO O SISTEMA DEVE omitir a funcionalidade correspondente do CHANGELOG.md e avisar o dono.",
+        "O SISTEMA DEVE preservar todas as entradas anteriores do CHANGELOG.md.",
+        "QUANDO verificar-repo.py roda sem argumentos O SISTEMA DEVE reportar zero falhas."
       ],
-      "comando_teste": "python scripts/verificar-repo.py --check comandos-documentados && python scripts/verificar-repo.py --check paridade",
+      "comando_teste": "python scripts/verificar-repo.py",
       "orcamento_turnos": 15,
-      "estado": "concluido",
+      "estado": "pendente",
       "tentativas": 0,
       "bloqueado_por": null,
       "notas": [
-        "O titulo do passo diz 'as tres acoes' e precisa mudar junto com a lista.",
-        "Concluído em 2026-09-08 — implementado diretamente."
+        "Bloco de fechamento acrescentado pelo arquiteto, alem das seis funcionalidades pedidas: sem ele a fase termina com funcionalidade nova anunciada como 1.3.1 e o versao_alvo do plano fica sem quem o cumpra.",
+        "F3-03 e F3-05 nao aparecem em depende_de por serem alcancados via F3-04 e F3-06."
       ]
     }
   ]

@@ -182,6 +182,23 @@ def distribuicao(blocos):
     print()
 
 # ---------------------------------------------------------------------------
+# Dependencias orfas
+# ---------------------------------------------------------------------------
+
+def orfaos_por_bloco(blocos):
+    """Mapeia id de bloco -> lista de dependencias orfas (ausentes do plano).
+    Orfao (R1): dep presente em depende_de e ausente do conjunto de id de
+    todos os blocos do mesmo arquivo de plano. R2: todas as orfas do bloco
+    sao reportadas, nenhuma e omitida. R5: blocos concluidos tambem entram."""
+    ids_validos = {b.get("id") for b in blocos}
+    mapa = {}
+    for b in blocos:
+        orfas = [d for d in b.get("depende_de", []) if d not in ids_validos]
+        if orfas:
+            mapa[b["id"]] = orfas
+    return mapa
+
+# ---------------------------------------------------------------------------
 # Detalhe de bloco
 # ---------------------------------------------------------------------------
 
@@ -233,7 +250,7 @@ def detalhe_bloco(bid, plano_path, metricas_path):
     deps = b.get("depende_de") or []
     if deps:
         for d in deps:
-            dep_estado = by_id[d].get("estado", "?") if d in by_id else "?"
+            dep_estado = by_id[d].get("estado", "?") if d in by_id else "INEXISTENTE"
             print(f"  {d}  {dep_estado}")
     else:
         print("  nenhuma")
@@ -364,6 +381,7 @@ def main():
 
     blocos = plano.get("blocos", [])
     done = {b["id"] for b in blocos if b.get("estado") == "concluido"}
+    orfaos_map = orfaos_por_bloco(blocos)
 
     liberados, travados, bloqueados = [], [], []
     for b in blocos:
@@ -392,10 +410,13 @@ def main():
             estado = b.get("estado", "pendente")
             marca = ICON.get(estado, "[ ]")
             extra = ""
+            orfas_bloco = orfaos_map.get(b["id"])
             if b.get("bloqueado_por"):
                 extra = f"  <- TRAVADO: {b['bloqueado_por']}"
             elif estado == "bloqueado":
                 extra = "  <- BLOQUEADO"
+            elif orfas_bloco:
+                extra = f"  <- ORFAO: {', '.join(orfas_bloco)}"
             elif estado == "pendente":
                 faltam = [x for x in b.get("depende_de", []) if x not in done]
                 if faltam:
@@ -417,6 +438,14 @@ def main():
             motivo = b.get("bloqueado_por") or "(estado: bloqueado)"
             print(f"  {b['id']}  {motivo}")
     print()
+
+    if orfaos_map:
+        print("--- DEPENDENCIAS ORFAS ---")
+        for b in blocos:
+            for d in orfaos_map.get(b["id"], []):
+                print(f"  {b['id']}  depende de {d}")
+        print()
+
     distribuicao(blocos)
     resumo_metricas(metricas_path)
     checar_atualizacao()
