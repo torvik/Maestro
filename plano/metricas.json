@@ -14,6 +14,19 @@
       "commit_sha": "e58a164",
       "timestamp_inicio": "2026-09-09T00:10:00Z",
       "timestamp_fim": "2026-09-09T00:42:20Z"
+    },
+    {
+      "id": "F3-02",
+      "modelo_planejado": "claude-haiku-4-5",
+      "modelo_efetivo": "claude-haiku-4-5",
+      "revisor_modelo": "claude-sonnet-5",
+      "turnos_orcados": 15,
+      "turnos_usados": null,
+      "tentativas": 0,
+      "veredito": "aprovado",
+      "commit_sha": "5053b3e",
+      "timestamp_inicio": "2026-09-08T21:00:00Z",
+      "timestamp_fim": "2026-09-08T21:30:00Z"
     }
   ]
 }
