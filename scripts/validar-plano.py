@@ -43,7 +43,7 @@ def _resolve_plano(fase_arg):
             found = sorted(_glob.glob("plano/*/blocos.json"))
             print(f"ERRO: fase {fase_arg!r} nao encontrada ({caminho}).", file=sys.stderr)
             if found:
-                fases = [f.split("/")[1] for f in found]
+                fases = [f.replace("\\", "/").split("/")[1] for f in found]
                 print(f"  Fases disponiveis: {', '.join(fases)}", file=sys.stderr)
             sys.exit(1)
         return caminho
@@ -64,7 +64,7 @@ def _resolve_plano(fase_arg):
         print("ERRO: nenhum plano encontrado. Rode /maestro:setup.", file=sys.stderr)
         sys.exit(1)
     else:
-        fases = [f.split("/")[1] for f in found]
+        fases = [f.replace("\\", "/").split("/")[1] for f in found]
         print(f"ERRO: multiplas fases encontradas: {', '.join(fases)}", file=sys.stderr)
         print("  Passe --fase <nome> para selecionar.", file=sys.stderr)
         sys.exit(1)
