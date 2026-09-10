@@ -86,21 +86,25 @@ E `plano/blocos.json` conforme `../planejar-projeto/references/schema-blocos.md`
 ## Passo 4 — Validar e mostrar
 Use a skill `maestro-runtime` para localizar e rodar `validar-plano.py` e depois `status.py`. Mostre o quadro e diga qual é o próximo bloco liberado.
 
-## Passo 5 — Fechar com os comandos disponíveis
+## Passo 5 — Comandos disponíveis
 
-| Comando | Quando usar |
-|---|---|
-| `/maestro:status` | Ver o quadro — concluído, liberado, travado |
-| `/maestro:proxima` | Executar o próximo bloco no modelo certo |
-| `/maestro:planejar` | Especificar um bloco sem spec |
-| `/maestro:replanejar` | Ajustar o plano quando a realidade muda |
-| `/maestro:custos` | Ver distribuição planejada por modelo |
-| `/maestro:retomar` | Recuperar bloco interrompido após crash |
-| `/maestro:revisar <ID>` | Revisão de auditoria de qualquer bloco |
-| `/maestro:destravar <ID>` | Limpar bloqueio sem editar JSON |
-| `/maestro:editar <ID>` | Ajustar a spec de um bloco |
-| `/maestro:rollback <ID>` | Desfazer um bloco aprovado por engano |
-| `/maestro:exportar` | Gerar relatório completo do plano |
+**No dia a dia**
+
+- `/maestro:setup` — Configura o Maestro neste projeto por conversa — detecta specs, faz poucas perguntas e gera o plano.
+- `/maestro:status` — Mostra o quadro do plano — concluído, em andamento, liberado, travado.
+- `/maestro:proxima` — Executa o próximo bloco liberado do plano, no modelo que a complexidade exige.
+- `/maestro:planejar` — Escreve a spec de um bloco (ou planeja um projeto novo) com o arquiteto no Opus.
+
+**Quando algo sai do trilho**
+
+- `/maestro:replanejar` — Revisa o plano quando a realidade mudou — bloco maior que a spec, dependência nova, decisão tomada.
+- `/maestro:custos` — Panorama de custo — a distribuição planejada por modelo (Maestro) e um lembrete de onde checar o gasto real da sessão (Claude Code).
+- `/maestro:retomar` — Recupera blocos em_andamento após sessão interrompida — analisa o que foi feito e oferece opções de continuação.
+- `/maestro:revisar <ID>` — Dispara revisão de auditoria de um bloco específico, independente do fluxo de execução.
+- `/maestro:destravar <ID>` — Limpa o bloqueio de um bloco sem editar plano/blocos.json manualmente. Exige confirmação explícita antes de gravar.
+- `/maestro:editar <ID>` — Ajusta a spec de um bloco — ajuste pontual (só a mudança descrita) ou regeração completa pelo arquiteto. Não altera estado nem tentativas.
+- `/maestro:rollback <ID>` — Desfaz um bloco aprovado usando git revert (nunca git reset). Exige confirmação explícita. Só opera quando a árvore está limpa.
+- `/maestro:exportar` — Gera plano/RELATORIO.md com o plano completo, status de cada bloco e métricas. Artefato para compartilhar com o time sem precisar do Claude Code.
 
 ## Nunca
 - Nunca sobrescreva um plano existente sem confirmar.
