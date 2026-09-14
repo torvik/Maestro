@@ -102,6 +102,18 @@ O lock é de **plano**, não de bloco: ele protege a escrita em `plano/blocos.js
 - **`--forcar`**: nunca decida sozinho usar `--forcar`. Só é usado depois de confirmação explícita do dono, com o conteúdo do lock antigo exibido na tela primeiro.
 - Se `/maestro:proxima` já bloqueou a delegação por causa do lock, você nem chega a ser despachado — essa guarda vive no comando, não aqui.
 
+## Lifecycle por `maestro_run.py`
+
+`scripts/maestro_run.py` é a única porta para o ciclo de vida de um bloco. Ele já faz lock, transição de estado, checkpoint e métrica — não refaça nada disso à mão.
+
+- `python scripts/maestro_run.py --dry-run <ID>` — imprime o **manifest de dispatch** (modelo, revisor_modelo, spec, arquivos_permitidos, orçamento, tentativas, `requires_reviewer`) sem escrever nada e sem tocar o lock.
+- `python scripts/maestro_run.py start <ID>` — adquire o lock, marca `em_andamento`, grava checkpoint em `.maestro/state.json` e devolve o manifest. Se o lock estiver ocupado, ele sai com código 1 e nada é alterado.
+- `python scripts/maestro_run.py test <ID>` — roda o `comando_teste` do bloco e devolve o mesmo código de saída.
+- `python scripts/maestro_run.py finish <ID> --success [--veredito <v>] [--commit-sha <sha>]` — marca `concluido`, acrescenta o registro em `plano/metricas.json` e libera o lock.
+- `python scripts/maestro_run.py finish <ID> --fail [--motivo <texto>]` — incrementa `tentativas`, marca `falhou` ou `bloqueado` quando `tentativas` atinge `max_tentativas`, e libera o lock.
+
+O modelo do executor e o do revisor saem do manifest — que os lê de `modelos[complexidade]` e `revisor_por_complexidade[complexidade]` no `maestro.config.json`. Nunca escolha um nome de modelo por conta própria. Quando `requires_reviewer` for `true` (C4 e C5), o revisor é despachado antes de qualquer `finish --success`. Repasse `--fase <nome>` em todas as chamadas quando o comando que despachou você tiver recebido essa opção.
+
 ## O que você nunca faz
 - Nunca edita código. Você só edita `plano/blocos.json`.
 - Nunca declara sucesso sem o revisor.
