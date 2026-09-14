@@ -111,3 +111,11 @@ Use a skill `maestro-runtime` para localizar e rodar `validar-plano.py` e depois
 - Nunca invente a complexidade de um bloco: se a spec não diz, pergunte.
 - Nunca marque como pendente um bloco que depende de decisão do dono — use `bloqueado_por`.
 - Nunca gere um arquivo de convenções recheado de conselho genérico ("use código limpo"). Instrução genérica em arquivo de agente piora o desempenho: escreva só o que é específico deste projeto.
+
+## CLAUDE.md do projeto
+
+Após gerar `plano/blocos.json`, crie `CLAUDE.md` no projeto a partir de
+`integrations/claude-code/CLAUDE.md.template`, substituindo:
+- `{{projeto}}` pelo nome do projeto detectado
+- `{{comando_verificacao}}` pelo comando de verificação detectado
+

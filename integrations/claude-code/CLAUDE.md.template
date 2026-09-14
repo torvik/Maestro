@@ -1,0 +1,26 @@
+# {{projeto}} — Maestro
+
+## Antes de qualquer implementação
+
+1. `python scripts/status.py` — veja o quadro do plano.
+2. `python scripts/maestro_next.py` — identifique o próximo bloco liberado.
+
+## Lifecycle de um bloco
+
+```
+python scripts/maestro_run.py --dry-run <ID>
+python scripts/maestro_run.py start <ID>
+python scripts/maestro_run.py test <ID>
+python scripts/maestro_run.py finish <ID> --success | --fail
+```
+
+## Verificação
+
+`{{comando_verificacao}}`
+
+## Regras
+
+- Um bloco por sessão.
+- Modelo vem do manifest (`maestro_run.py --dry-run`), nunca fixo aqui.
+- Revisor sempre >= executor em capability.
+- Nada marcado concluído sem veredito do revisor.
