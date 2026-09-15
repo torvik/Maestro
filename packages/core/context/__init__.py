@@ -14,9 +14,13 @@ derrubar o build.
 
 from .builder import ContextBuilder, ContextError
 from .manifest import ContextFile, ContextManifest  # noqa: F401  (ContextFile e reexport)
+from .budget import BudgetTracker, BudgetUsage, BudgetError
 
 __all__ = [
     "ContextBuilder",
     "ContextManifest",
     "ContextError",
+    "BudgetTracker",
+    "BudgetUsage",
+    "BudgetError",
 ]
