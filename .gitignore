@@ -6,6 +6,9 @@ __pycache__/
 *.pyc
 *.pyo
 
+# Maestro runtime state
+.maestro/
+
 # arquivos internos de planejamento e memória de agentes
 plano/
 .claude/
