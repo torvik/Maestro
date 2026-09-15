@@ -8,5 +8,6 @@ Importar este pacote nao produz output nem executa IO.
 """
 
 from .manager import ProviderError, ProviderInfo, ProviderManager
+from .registry import ProviderRegistry
 
-__all__ = ["ProviderError", "ProviderInfo", "ProviderManager"]
+__all__ = ["ProviderError", "ProviderInfo", "ProviderManager", "ProviderRegistry"]
