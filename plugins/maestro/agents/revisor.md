@@ -58,3 +58,17 @@ Sempre **APROVADO** (com evidência) ou **REPROVADO** (com a lista objetiva do q
 Nunca aprove "com ressalvas". Ressalva que importa é REPROVADO.
 
 **Barra de merge inegociável:** falso negativo de segurança reprova sempre, sem override, mesmo que todo o resto esteja perfeito.
+
+## Formato de veredito esperado pelo Reviewer
+
+Conclua sempre com uma linha explícita:
+
+```
+Veredito final: **APROVADO**
+```
+ou
+```
+Veredito final: **REPROVADO**
+```
+
+Isso permite ao `packages.core.reviewer.Reviewer.parse_verdict()` extrair o resultado de forma determinística.
