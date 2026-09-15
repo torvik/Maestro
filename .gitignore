@@ -1,6 +1,11 @@
 node_modules/
 .DS_Store
 
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+
 # arquivos internos de planejamento e memória de agentes
 plano/
 .claude/
