@@ -387,6 +387,9 @@ def run_tests():
             results = em.list_by_module("F11", limit=5)
             assert len(results) <= 5
             assert all(r["modulo"] == "F11" for r in results), [r.get("modulo") for r in results]
+            # Verifica ordenação DESC por created_at
+            dates = [r["created_at"] for r in results]
+            assert dates == sorted(dates, reverse=True), f"Not sorted DESC: {dates}"
             ok("T20-list-by-module")
         except Exception as e:
             fail("T20-list-by-module", e)
@@ -396,6 +399,9 @@ def run_tests():
             results = em.list_by_bloco("F11-01")
             assert len(results) >= 1
             assert all(r["source_block"] == "F11-01" for r in results)
+            # Verifica ordenação DESC por created_at
+            dates = [r["created_at"] for r in results]
+            assert dates == sorted(dates, reverse=True), f"Not sorted DESC: {dates}"
             ok("T21-list-by-bloco")
         except Exception as e:
             fail("T21-list-by-bloco", e)
@@ -404,6 +410,9 @@ def run_tests():
         try:
             results = em.list_recent(limit=3)
             assert len(results) <= 3
+            # Verifica ordenação DESC por created_at
+            dates = [r["created_at"] for r in results]
+            assert dates == sorted(dates, reverse=True), f"Not sorted DESC: {dates}"
             ok("T22-list-recent")
         except Exception as e:
             fail("T22-list-recent", e)
@@ -434,6 +443,16 @@ def run_tests():
                     duracao_segundos=float(i),
                     modelo_usado="m",
                 )
+            # Verifica que coluna module contém "F11" para todas as 1000 entradas
+            conn = core._index.connection()
+            total = conn.execute(
+                "SELECT COUNT(*) FROM memories WHERE type = 'episodic'"
+            ).fetchone()[0]
+            assert total == 1000, f"Expected 1000 episodics, got {total}"
+            wrong = conn.execute(
+                "SELECT COUNT(*) FROM memories WHERE type = 'episodic' AND module != 'F11'"
+            ).fetchone()[0]
+            assert wrong == 0, f"{wrong} entries without module='F11'"
             t0 = time.monotonic()
             results = em.list_by_module("F11", limit=10)
             elapsed_ms = (time.monotonic() - t0) * 1000

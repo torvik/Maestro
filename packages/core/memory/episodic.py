@@ -264,25 +264,36 @@ class EpisodicMemory:
             conditions.append("module = ?")
             params.append(modulo)
 
-        if resultado is not None:
-            conditions.append("resultado = ?")
-            params.append(resultado)
-
         if not include_expired:
             conditions.append("(decay_at IS NULL OR decay_at > ? OR pinned = 1)")
             params.append(now_iso())
 
         where = " AND ".join(conditions)
+        # Busca mais que limit para compensar filtro Python por resultado
+        fetch_limit = limit * 10 + 50 if resultado is not None else limit
         sql = (
             f"SELECT * FROM memories WHERE {where} "
             f"ORDER BY created_at DESC LIMIT ?"
         )
-        params.append(limit)
+        params.append(fetch_limit)
 
         rows = conn.execute(sql, params).fetchall()
-        result = [dict(r) for r in rows]
-        for r in result:
+        result = []
+        for row in rows:
+            r = dict(row)
             if "modulo" not in r and "module" in r:
                 r["modulo"] = r["module"]
+            # Enriquece com frontmatter do arquivo para obter campos não indexados
+            raw = self._core.read_raw(r["id"])
+            if raw is not None:
+                fm_file, _ = raw
+                # Propaga resultado do frontmatter para o dict de resultado
+                if "resultado" not in r or r.get("resultado") is None:
+                    r["resultado"] = fm_file.get("resultado")
+            result.append(r)
 
-        return result
+        # Filtro de resultado em Python (campo no frontmatter, não coluna SQL)
+        if resultado is not None:
+            result = [r for r in result if r.get("resultado") == resultado]
+
+        return result[:limit]
