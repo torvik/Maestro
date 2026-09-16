@@ -35,9 +35,7 @@ CREATE TABLE IF NOT EXISTS memories (
     indexed_at      TEXT NOT NULL,
     access_count    INTEGER NOT NULL DEFAULT 0,
     last_accessed_at TEXT,
-    title           TEXT DEFAULT '',
-    module          TEXT,
-    resultado       TEXT
+    title           TEXT DEFAULT ''
 )
 """
 
@@ -107,40 +105,89 @@ class MemoryIndex:
         conn.commit()
 
     def upsert(self, entry: dict):
-        """Insert or replace a memory entry in the index."""
+        """Insert or replace a memory entry in the index.
+
+        Preserves the 'module' column if the entry does not supply one,
+        so that EpisodicMemory.promote() and core.patch() do not clobber
+        the value set by _set_module_in_db().
+        """
         conn = self._ensure_connection()
-        conn.execute(
-            """INSERT OR REPLACE INTO memories
-               (id, type, authority, created_at, updated_at, decay_at,
-                pinned, supersedes, is_superseded, tags, source_block,
-                source_agent, file_path, file_hash, file_size, file_mtime,
-                indexed_at, access_count, last_accessed_at, title, module, resultado)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-            (
-                entry["id"],
-                entry["type"],
-                entry["authority"],
-                entry["created_at"],
-                entry["updated_at"],
-                entry.get("decay_at"),
-                1 if entry.get("pinned") else 0,
-                entry.get("supersedes"),
-                1 if entry.get("is_superseded") else 0,
-                entry.get("tags", ""),
-                entry.get("source_block"),
-                entry.get("source_agent"),
-                entry["file_path"],
-                entry["file_hash"],
-                entry["file_size"],
-                entry["file_mtime"],
-                entry["indexed_at"],
-                entry.get("access_count", 0),
-                entry.get("last_accessed_at"),
-                entry.get("title", ""),
-                entry.get("module"),
-                entry.get("resultado"),
-            ),
-        )
+        # Check if 'module' column exists (added by EpisodicMemory lazily)
+        col_names = [row[1] for row in conn.execute("PRAGMA table_info(memories)").fetchall()]
+
+        # Determine module value: use entry's if present, else preserve existing
+        module_value = entry.get("module")  # None when not in entry
+        if module_value is None and "module" in col_names:
+            # Try to read existing module from DB before replacing
+            existing = conn.execute(
+                "SELECT module FROM memories WHERE id = ?", (entry["id"],)
+            ).fetchone()
+            if existing is not None:
+                module_value = existing[0]
+
+        if "module" in col_names:
+            conn.execute(
+                """INSERT OR REPLACE INTO memories
+                   (id, type, authority, created_at, updated_at, decay_at,
+                    pinned, supersedes, is_superseded, tags, source_block,
+                    source_agent, file_path, file_hash, file_size, file_mtime,
+                    indexed_at, access_count, last_accessed_at, title, module)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (
+                    entry["id"],
+                    entry["type"],
+                    entry["authority"],
+                    entry["created_at"],
+                    entry["updated_at"],
+                    entry.get("decay_at"),
+                    1 if entry.get("pinned") else 0,
+                    entry.get("supersedes"),
+                    1 if entry.get("is_superseded") else 0,
+                    entry.get("tags", ""),
+                    entry.get("source_block"),
+                    entry.get("source_agent"),
+                    entry["file_path"],
+                    entry["file_hash"],
+                    entry["file_size"],
+                    entry["file_mtime"],
+                    entry["indexed_at"],
+                    entry.get("access_count", 0),
+                    entry.get("last_accessed_at"),
+                    entry.get("title", ""),
+                    module_value,
+                ),
+            )
+        else:
+            conn.execute(
+                """INSERT OR REPLACE INTO memories
+                   (id, type, authority, created_at, updated_at, decay_at,
+                    pinned, supersedes, is_superseded, tags, source_block,
+                    source_agent, file_path, file_hash, file_size, file_mtime,
+                    indexed_at, access_count, last_accessed_at, title)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (
+                    entry["id"],
+                    entry["type"],
+                    entry["authority"],
+                    entry["created_at"],
+                    entry["updated_at"],
+                    entry.get("decay_at"),
+                    1 if entry.get("pinned") else 0,
+                    entry.get("supersedes"),
+                    1 if entry.get("is_superseded") else 0,
+                    entry.get("tags", ""),
+                    entry.get("source_block"),
+                    entry.get("source_agent"),
+                    entry["file_path"],
+                    entry["file_hash"],
+                    entry["file_size"],
+                    entry["file_mtime"],
+                    entry["indexed_at"],
+                    entry.get("access_count", 0),
+                    entry.get("last_accessed_at"),
+                    entry.get("title", ""),
+                ),
+            )
         conn.commit()
 
     def remove(self, memory_id: str):
