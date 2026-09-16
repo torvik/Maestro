@@ -8,6 +8,8 @@ from packages.core.memory.index import MemoryIndex
 from packages.core.memory.lock import MemoryLock
 from packages.core.memory.working import WorkingMemory, extract_module
 from packages.core.memory.episodic import EpisodicMemory
+from packages.core.memory.semantic import SemanticMemory
+from packages.core.memory.procedural import ProceduralMemory
 
 __all__ = [
     "MemoryCore",
@@ -17,4 +19,6 @@ __all__ = [
     "WorkingMemory",
     "EpisodicMemory",
     "extract_module",
+    "SemanticMemory",
+    "ProceduralMemory",
 ]
