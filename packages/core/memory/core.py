@@ -5,6 +5,8 @@ No external dependencies -- stdlib only (Python 3.9+).
 No I/O at module level.
 """
 
+from __future__ import annotations
+
 import hashlib
 import os
 import sys
