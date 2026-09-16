@@ -551,4 +551,6 @@ class MemoryCore:
             "access_count": 0,
             "last_accessed_at": None,
             "title": extract_title(body),
+            "module": fm.get("modulo"),
+            "resultado": fm.get("resultado"),
         }

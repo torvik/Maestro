@@ -35,7 +35,9 @@ CREATE TABLE IF NOT EXISTS memories (
     indexed_at      TEXT NOT NULL,
     access_count    INTEGER NOT NULL DEFAULT 0,
     last_accessed_at TEXT,
-    title           TEXT DEFAULT ''
+    title           TEXT DEFAULT '',
+    module          TEXT,
+    resultado       TEXT
 )
 """
 
@@ -112,8 +114,8 @@ class MemoryIndex:
                (id, type, authority, created_at, updated_at, decay_at,
                 pinned, supersedes, is_superseded, tags, source_block,
                 source_agent, file_path, file_hash, file_size, file_mtime,
-                indexed_at, access_count, last_accessed_at, title)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                indexed_at, access_count, last_accessed_at, title, module, resultado)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 entry["id"],
                 entry["type"],
@@ -135,6 +137,8 @@ class MemoryIndex:
                 entry.get("access_count", 0),
                 entry.get("last_accessed_at"),
                 entry.get("title", ""),
+                entry.get("module"),
+                entry.get("resultado"),
             ),
         )
         conn.commit()
