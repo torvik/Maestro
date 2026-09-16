@@ -8,6 +8,7 @@ Sem dependencias externas obrigatorias. Sem I/O no import nem no __init__.
 
 from __future__ import annotations
 
+import os
 import re
 import struct
 import uuid
@@ -32,6 +33,7 @@ CREATE TABLE IF NOT EXISTS ext_entities (
     kind        TEXT NOT NULL,
     name        TEXT NOT NULL,
     context     TEXT DEFAULT '',
+    source      TEXT NOT NULL DEFAULT 'manual',
     created_at  TEXT NOT NULL
 )
 """
@@ -73,7 +75,7 @@ _FILE_RE = re.compile(r"`([\w./\\\-]+\.\w+)`")
 _DECISION_LINE_RE = re.compile(r"^-\s*DECIS[ÃA]O:\s*(.+)$", re.MULTILINE)
 _DECISION_HEADER_RE = re.compile(r"^##\s*Decis[ãa]o\b\s*(.*)$", re.MULTILINE)
 
-_EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
+_DEFAULT_EMBEDDING_MODEL = os.environ.get("MAESTRO_EMBEDDING_MODEL", "all-MiniLM-L6-v2")
 
 
 def _pack_embedding(vector) -> bytes:
@@ -234,12 +236,16 @@ class SemanticMemory:
     # --- Entidades ---
 
     def add_entity(self, memory_id: str, kind: str, name: str, context: str = "") -> str:
-        """Adiciona entidade. Retorna entity_id."""
+        """Adiciona entidade manual. Retorna entity_id.
+
+        Entidades adicionadas por este metodo tem source='manual' e nunca
+        sao removidas pela re-extracao automatica em `_sync_entities`.
+        """
         conn = self._core._index.connection()
         entity_id = str(uuid.uuid4())
         conn.execute(
-            """INSERT INTO ext_entities (id, memory_id, kind, name, context, created_at)
-               VALUES (?, ?, ?, ?, ?, ?)""",
+            """INSERT INTO ext_entities (id, memory_id, kind, name, context, source, created_at)
+               VALUES (?, ?, ?, ?, ?, 'manual', ?)""",
             (entity_id, memory_id, kind, name, context, now_iso()),
         )
         conn.commit()
@@ -277,22 +283,23 @@ class SemanticMemory:
     def _sync_entities(self, memory_id: str, content: str) -> None:
         """Re-extrai entidades regex-based para uma memoria (idempotente).
 
-        Remove as entidades previamente auto-extraidas para este memory_id
-        (kinds conhecidos) e insere as encontradas no conteudo atual.
+        Remove apenas as entidades previamente auto-extraidas (source='auto')
+        para este memory_id e insere as encontradas no conteudo atual.
+        Entidades manuais (source='manual', via `add_entity`) nunca sao
+        tocadas por este metodo.
         """
         extracted = self._extract_entities(content)
 
         conn = self._core._index.connection()
         conn.execute(
-            "DELETE FROM ext_entities WHERE memory_id = ? "
-            "AND kind IN ('function','class','file','decision')",
+            "DELETE FROM ext_entities WHERE memory_id = ? AND source = 'auto'",
             (memory_id,),
         )
         for kind, name, context in extracted:
             entity_id = str(uuid.uuid4())
             conn.execute(
-                """INSERT INTO ext_entities (id, memory_id, kind, name, context, created_at)
-                   VALUES (?, ?, ?, ?, ?, ?)""",
+                """INSERT INTO ext_entities (id, memory_id, kind, name, context, source, created_at)
+                   VALUES (?, ?, ?, ?, ?, 'auto', ?)""",
                 (entity_id, memory_id, kind, name, context, now_iso()),
             )
         conn.commit()
@@ -326,15 +333,14 @@ class SemanticMemory:
     # --- Vectors opcionais ---
 
     def vectors_available(self) -> bool:
-        """True se biblioteca de embeddings esta disponivel."""
+        """True se biblioteca de embeddings esta disponivel.
+
+        Somente `sentence_transformers` conta como embedding real
+        disponivel. `numpy` e dependencia interna de `sentence_transformers`,
+        nao um fallback de embedding, e nunca produz vetores sozinho.
+        """
         try:
             import sentence_transformers  # noqa: F401
-
-            return True
-        except ImportError:
-            pass
-        try:
-            import numpy  # noqa: F401
 
             return True
         except ImportError:
@@ -363,7 +369,7 @@ class SemanticMemory:
             conn.execute(
                 """INSERT INTO ext_vectors (memory_id, embedding, model, created_at)
                    VALUES (?, ?, ?, ?)""",
-                (memory_id, _pack_embedding(vector), _EMBEDDING_MODEL_NAME, now_iso()),
+                (memory_id, _pack_embedding(vector), _DEFAULT_EMBEDDING_MODEL, now_iso()),
             )
             conn.commit()
             return True
@@ -381,6 +387,6 @@ class SemanticMemory:
         except ImportError:
             return None
 
-        model = SentenceTransformer(_EMBEDDING_MODEL_NAME)
+        model = SentenceTransformer(_DEFAULT_EMBEDDING_MODEL)
         vector = model.encode(text)
         return [float(x) for x in vector]

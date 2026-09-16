@@ -147,6 +147,39 @@ def run_tests():
         except Exception as e:
             fail("T16-index-embedding-no-crash", e)
 
+        # T17: vectors_available() retorna False quando sentence_transformers ausente
+        try:
+            saved = sys.modules.get("sentence_transformers", "__absent__")
+            sys.modules["sentence_transformers"] = None
+            try:
+                avail = sm.vectors_available()
+            finally:
+                if saved == "__absent__":
+                    del sys.modules["sentence_transformers"]
+                else:
+                    sys.modules["sentence_transformers"] = saved
+            assert avail is False, avail
+            ok("T17-vectors-unavailable-without-sentence-transformers")
+        except Exception as e:
+            fail("T17-vectors-unavailable-without-sentence-transformers", e)
+
+        core._index.close()
+
+    # T18: reindexar não apaga entidade manual adicionada após a primeira indexação
+    with tempfile.TemporaryDirectory() as tmpdir:
+        core = make_core(tmpdir)
+        sem = SemanticMemory(core)
+        sem.ensure_schema()
+        try:
+            sem.index_memory("m1", "def foo(): pass")
+            sem.add_entity("m1", "function", "manually_added")
+            sem.index_memory("m1", "def foo(): pass")  # reindexar
+            entities = sem.entities_for_memory("m1")
+            names = [e["name"] for e in entities]
+            assert "manually_added" in names, f"Entidade manual foi destruída: {names}"
+            ok("T18-reindex-preserves-manual-entity")
+        except Exception as e:
+            fail("T18-reindex-preserves-manual-entity", e)
         core._index.close()
 
     # === index_all com arquivos reais ===
