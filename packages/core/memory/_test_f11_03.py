@@ -120,13 +120,17 @@ def run_tests():
         except Exception as e:
             fail("T7-entities-for-memory", e)
 
-        # T8: add_link + links_for_entity
+        # T8: add_link + links_for_entity (source e target)
         try:
             eid2 = sm.add_entity(mid, "function", "bar")
             lid = sm.add_link(eid1, eid2, "calls")
             assert isinstance(lid, str) and len(lid) > 0
             links = sm.links_for_entity(eid1)
             assert any(l["id"] == lid for l in links), links
+            links_via_target = sm.links_for_entity(eid2)
+            assert any(lk["source_id"] == eid1 for lk in links_via_target), (
+                f"links_for_entity pelo target_id falhou: {links_via_target}"
+            )
             ok("T8-add-link-and-query")
         except Exception as e:
             fail("T8-add-link-and-query", e)
@@ -188,14 +192,23 @@ def run_tests():
         sem = SemanticMemory(core)
         sem.ensure_schema()
         try:
-            content = "def minha_func(): pass\nclass MinhaClasse:\n    pass\n- DECISÃO: usar SQLite"
+            content = (
+                "def minha_func(): pass\n"
+                "class MinhaClasse:\n    pass\n"
+                "- DECISÃO: usar SQLite\n"
+                "ver `config/settings.py` para detalhes"
+            )
             sem.index_memory("m_auto", content)
             entities = sem.entities_for_memory("m_auto")
             kinds = {e["kind"] for e in entities}
             assert "function" in kinds, f"function não extraída: {entities}"
+            assert "class" in kinds, f"class não extraída: {entities}"
+            assert "file" in kinds, f"file não extraída: {entities}"
             assert "decision" in kinds, f"decision não extraída: {entities}"
             names = [e["name"] for e in entities]
-            assert any("minha_func" in n for n in names), f"nome errado: {names}"
+            assert any("minha_func" in n for n in names), f"minha_func não encontrada: {names}"
+            assert any("MinhaClasse" in n for n in names), f"MinhaClasse não encontrada: {names}"
+            assert any("config/settings.py" in n for n in names), f"arquivo não encontrado: {names}"
             ok("T19-index-memory-auto-extract-entities")
         except Exception as e:
             fail("T19-index-memory-auto-extract-entities", e)
@@ -211,8 +224,9 @@ def run_tests():
             import unittest.mock
             from datetime import datetime, timezone
 
-            sem.index_memory("vec_a", "python programming language")
-            sem.index_memory("vec_b", "cooking recipes pasta")
+            # Ambos os docs contem "maestro" -- FTS5 retorna os dois
+            sem.index_memory("vec_a", "maestro e uma ferramenta de planejamento")
+            sem.index_memory("vec_b", "maestro tambem suporta execucao de blocos")
 
             conn = sem._core._index.connection()
             conn.execute(
@@ -227,6 +241,7 @@ def run_tests():
             def pack_vec(v):
                 return struct.pack(f"{len(v)}f", *v)
 
+            # Embeddings fake: vec_a alinhado com a query, vec_b perpendicular
             now = datetime.now(timezone.utc).isoformat()
             conn.execute(
                 "INSERT OR REPLACE INTO ext_vectors VALUES (?,?,?,?)",
@@ -238,14 +253,19 @@ def run_tests():
             )
             conn.commit()
 
+            # Query vector proximo de vec_a ([1,0,0,0])
             with unittest.mock.patch.object(sem, "vectors_available", return_value=True), \
                  unittest.mock.patch.object(sem, "_embed_text", return_value=[1.0, 0.0, 0.0, 0.0]):
-                results = sem.search("python", limit=10)
+                results = sem.search("maestro", limit=10)
 
-            assert len(results) >= 1, results
             ids = [r["memory_id"] for r in results]
-            if "vec_b" in ids:
-                assert ids.index("vec_a") < ids.index("vec_b"), f"Re-ranking falhou: {ids}"
+            # Ambos devem aparecer (FTS5 retorna os dois)
+            assert "vec_a" in ids, f"vec_a nao encontrado: {ids}"
+            assert "vec_b" in ids, f"vec_b nao encontrado: {ids}"
+            # vec_a deve aparecer ANTES de vec_b (maior similaridade coseno)
+            assert ids.index("vec_a") < ids.index("vec_b"), (
+                f"Re-ranking falhou: vec_a deveria ser primeiro, mas ordem e {ids}"
+            )
             ok("T20-search-cosine-reranking")
         except Exception as e:
             fail("T20-search-cosine-reranking", e)
