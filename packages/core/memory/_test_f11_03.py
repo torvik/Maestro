@@ -182,6 +182,75 @@ def run_tests():
             fail("T18-reindex-preserves-manual-entity", e)
         core._index.close()
 
+    # T19: index_memory() extrai entidades automaticamente
+    with tempfile.TemporaryDirectory() as tmpdir:
+        core = make_core(tmpdir)
+        sem = SemanticMemory(core)
+        sem.ensure_schema()
+        try:
+            content = "def minha_func(): pass\nclass MinhaClasse:\n    pass\n- DECISÃO: usar SQLite"
+            sem.index_memory("m_auto", content)
+            entities = sem.entities_for_memory("m_auto")
+            kinds = {e["kind"] for e in entities}
+            assert "function" in kinds, f"function não extraída: {entities}"
+            assert "decision" in kinds, f"decision não extraída: {entities}"
+            names = [e["name"] for e in entities]
+            assert any("minha_func" in n for n in names), f"nome errado: {names}"
+            ok("T19-index-memory-auto-extract-entities")
+        except Exception as e:
+            fail("T19-index-memory-auto-extract-entities", e)
+        core._index.close()
+
+    # T20: search() faz re-ranking coseno quando ext_vectors tem embeddings
+    with tempfile.TemporaryDirectory() as tmpdir:
+        core = make_core(tmpdir)
+        sem = SemanticMemory(core)
+        sem.ensure_schema()
+        try:
+            import struct
+            import unittest.mock
+            from datetime import datetime, timezone
+
+            sem.index_memory("vec_a", "python programming language")
+            sem.index_memory("vec_b", "cooking recipes pasta")
+
+            conn = sem._core._index.connection()
+            conn.execute(
+                """CREATE TABLE IF NOT EXISTS ext_vectors (
+                    memory_id   TEXT PRIMARY KEY,
+                    embedding   BLOB NOT NULL,
+                    model       TEXT NOT NULL,
+                    created_at  TEXT NOT NULL
+                )"""
+            )
+
+            def pack_vec(v):
+                return struct.pack(f"{len(v)}f", *v)
+
+            now = datetime.now(timezone.utc).isoformat()
+            conn.execute(
+                "INSERT OR REPLACE INTO ext_vectors VALUES (?,?,?,?)",
+                ("vec_a", pack_vec([1.0, 0.0, 0.0, 0.0]), "fake", now),
+            )
+            conn.execute(
+                "INSERT OR REPLACE INTO ext_vectors VALUES (?,?,?,?)",
+                ("vec_b", pack_vec([0.0, 1.0, 0.0, 0.0]), "fake", now),
+            )
+            conn.commit()
+
+            with unittest.mock.patch.object(sem, "vectors_available", return_value=True), \
+                 unittest.mock.patch.object(sem, "_embed_text", return_value=[1.0, 0.0, 0.0, 0.0]):
+                results = sem.search("python", limit=10)
+
+            assert len(results) >= 1, results
+            ids = [r["memory_id"] for r in results]
+            if "vec_b" in ids:
+                assert ids.index("vec_a") < ids.index("vec_b"), f"Re-ranking falhou: {ids}"
+            ok("T20-search-cosine-reranking")
+        except Exception as e:
+            fail("T20-search-cosine-reranking", e)
+        core._index.close()
+
     # === index_all com arquivos reais ===
     with tempfile.TemporaryDirectory() as tmpdir:
         core = make_core(tmpdir)
