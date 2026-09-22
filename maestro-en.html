@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maestro — the expensive model plans, the cheap one executes | Empreendedor Livre</title>
+<meta name="description" content="Free plugin for Claude Code that breaks your project into blocks, routes to the right model, and has memory, handoffs and universal protocol for multiple agents. Download free.">
+<meta property="og:title" content="Maestro 2.0 — orchestrate multi-agent projects in Claude Code">
+<meta property="og:description" content="The expensive model plans. The cheap one executes. Persistent memory, typed handoffs and universal protocol for any agent.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night:#0E1116; --night-2:#171C24; --night-3:#242C37; --night-4:#1C2330;
+    --paper:#FCFCFD; --paper-2:#F1F3F6;
+    --ink:#141A21; --ink-2:#4A5462; --ink-3:#79838F;
+    --mist:#D5DAE1;
+    --haiku:#0F7D5F; --sonnet:#2A5EDB; --opus:#A32C78;
+    --accent:#58a6ff;
+    --maxw:1140px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--paper);color:var(--ink);
+    font-family:'Instrument Sans',system-ui,sans-serif;font-size:17px;line-height:1.62;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px}
+  h1,h2,h3{font-family:'Bricolage Grotesque',system-ui,sans-serif;line-height:1.04;letter-spacing:-.025em;font-weight:800}
+  h1{font-size:clamp(2.7rem,6.4vw,4.9rem)}
+  h2{font-size:clamp(1.9rem,4vw,2.9rem);margin-bottom:.45em}
+  h3{font-size:1.08rem;font-weight:600;letter-spacing:-.012em;line-height:1.3}
+  p{max-width:64ch}
+  a{color:inherit}
+  code,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+  :focus-visible{outline:3px solid var(--sonnet);outline-offset:3px;border-radius:2px}
+
+  header{background:var(--night);border-bottom:1px solid var(--night-3)}
+  .bar{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:18px 0}
+  .brand{font-family:'Bricolage Grotesque';font-weight:800;font-size:1.2rem;color:#fff;text-decoration:none;letter-spacing:-.03em}
+  .brand em{font-style:normal;color:#7C8798;font-weight:600;font-size:.85rem;margin-left:9px}
+  .bar a.out{font-size:.9rem;color:#A8B2BF;text-decoration:none}
+  .bar a.out:hover{color:#fff}
+
+  .hero{background:var(--night);color:#fff;padding:76px 0 88px}
+  .tag{display:inline-flex;align-items:center;gap:8px;font-size:.82rem;font-weight:600;
+    color:#4FD1A5;border:1px solid #1E5A48;background:#0F2A22;border-radius:100px;padding:5px 13px;margin-bottom:26px}
+  .hero h1{max-width:15ch}
+  .hero .lead{font-size:1.19rem;color:#AEB8C6;margin-top:24px;max-width:54ch}
+  .cta{display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin-top:36px}
+  .btn{display:inline-block;background:#fff;color:var(--night);text-decoration:none;font-weight:600;
+    font-size:1rem;padding:15px 30px;border:none;border-radius:4px;cursor:pointer;
+    font-family:'Instrument Sans';transition:transform .12s ease,background .12s ease}
+  .btn:hover{background:#E4E8EE;transform:translateY(-1px)}
+  .cta small{color:#7C8798;font-size:.9rem}
+
+  .router{margin-top:64px;border:1px solid var(--night-3);border-radius:8px;background:var(--night-2);overflow:hidden}
+  .router-top{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;
+    padding:16px 24px;border-bottom:1px solid var(--night-3);font-size:.88rem;color:#8B96A5}
+  .router-top b{color:#fff;font-weight:600}
+  .row{display:grid;grid-template-columns:168px 1fr 132px;gap:28px;align-items:center;
+    padding:22px 24px;border-bottom:1px solid var(--night-3)}
+  .row:last-child{border-bottom:none}
+  .who{display:flex;flex-direction:column;gap:3px}
+  .who b{font-family:'Bricolage Grotesque';font-size:1.06rem;font-weight:800;letter-spacing:-.02em}
+  .who span{font-size:.79rem;color:#7C8798;font-family:'IBM Plex Mono'}
+  .h .who b{color:#3FBE95} .s .who b{color:#7FA5F5} .o .who b{color:#E68CC4}
+  .what{color:#C3CBD6;font-size:.97rem;line-height:1.5;max-width:none}
+  .weight{text-align:right}
+  .wbar{height:8px;background:#2B3441;border-radius:100px;overflow:hidden;margin-bottom:7px}
+  .wfill{height:100%;border-radius:100px}
+  .h .wfill{background:#3FBE95} .s .wfill{background:#5B89EE} .o .wfill{background:#D96BB4}
+  .weight span{font-size:.78rem;color:#7C8798;font-family:'IBM Plex Mono'}
+  .verline{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.85rem;color:#7C8798;margin-top:24px}
+  .vpill{font-family:'IBM Plex Mono';font-size:.78rem;color:#AEB8C6;border:1px solid var(--night-3);
+    border-radius:100px;padding:3px 11px}
+
+  section{padding:88px 0;border-top:1px solid var(--mist)}
+  .sec-lead{color:var(--ink-2);font-size:1.06rem;margin-bottom:44px;max-width:60ch}
+
+  /* custo */
+  .cost{display:grid;grid-template-columns:1.15fr .85fr;gap:60px;align-items:start}
+  .cbar{margin-bottom:26px}
+  .cbar .cl{display:flex;justify-content:space-between;align-items:baseline;gap:16px;margin-bottom:9px}
+  .cbar .cl span{color:var(--ink-2);font-size:.96rem}
+  .cbar .cl b{font-family:'Bricolage Grotesque';font-size:1.5rem;font-weight:800;letter-spacing:-.03em}
+  .ctrack{height:34px;background:var(--paper-2);border-radius:4px;overflow:hidden;display:flex}
+  .cfill{height:100%}
+  .fo{background:var(--opus)} .fs{background:var(--sonnet)} .fh{background:var(--haiku)}
+  .keys{display:flex;gap:22px;flex-wrap:wrap;font-size:.88rem;color:var(--ink-2);margin-top:14px}
+  .keys i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:7px}
+
+  /* passos */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:44px;counter-reset:s}
+  .step{counter-increment:s;border-top:2px solid var(--ink);padding-top:18px}
+  .step::before{content:"Step " counter(s);display:block;font-family:'IBM Plex Mono';font-size:.78rem;
+    color:var(--ink-3);margin-bottom:14px}
+  .step h3{margin-bottom:10px}
+  .step p{font-size:.96rem;color:var(--ink-2)}
+
+  /* camadas multi-agente */
+  .layers-wrap{background:var(--night);padding:88px 0;border-top:none}
+  .layers-wrap .sec-lead{color:#8B96A5}
+  .layers-wrap h2{color:#fff}
+  .layers{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--night-3);
+    border:1px solid var(--night-3);border-radius:8px;overflow:hidden;margin-top:44px}
+  .layer{background:var(--night-2);padding:26px 22px}
+  .layer-icon{font-size:1.5rem;margin-bottom:14px;display:block}
+  .layer h3{font-size:.97rem;font-weight:700;color:#fff;margin-bottom:8px;letter-spacing:-.015em}
+  .layer p{font-size:.88rem;color:#8B96A5;line-height:1.55;max-width:none}
+  .layer .tag-sm{display:inline-block;font-family:'IBM Plex Mono';font-size:.7rem;color:#4FD1A5;
+    border:1px solid #1E5A48;background:#0F2A22;border-radius:100px;padding:2px 9px;margin-bottom:10px}
+
+  /* comandos */
+  .cmds{border:1px solid var(--mist);border-radius:8px;overflow:hidden;background:#fff}
+  .cmd{display:grid;grid-template-columns:230px 1fr;gap:24px;padding:18px 26px;
+    border-top:1px solid var(--paper-2);align-items:baseline}
+  .cmd:first-child{border-top:none}
+  .cmd .mono{font-weight:500;font-size:.94rem;color:var(--ink)}
+  .cmd p{color:var(--ink-2);font-size:.96rem;max-width:none}
+  .cmd-new .mono{color:var(--sonnet)}
+
+  /* rails */
+  .rails{display:grid;grid-template-columns:1fr 1fr;gap:0 56px}
+  .rail{padding:24px 0;border-top:1px solid var(--mist)}
+  .rail h3{margin-bottom:7px}
+  .rail p{font-size:.95rem;color:var(--ink-2)}
+
+  /* download */
+  .grab{background:var(--night);color:#fff;border-radius:10px;padding:56px}
+  .grab h2{color:#fff}
+  .grab>p{color:#AEB8C6}
+  .form{display:grid;gap:16px;max-width:440px;margin-top:30px}
+  .form label{font-size:.86rem;color:#AEB8C6;display:block;margin-bottom:6px}
+  .form input[type=text],.form input[type=email]{width:100%;padding:14px 15px;border:1px solid var(--night-3);
+    background:var(--night-2);color:#fff;border-radius:4px;font-family:'Instrument Sans';font-size:1rem}
+  .form input::placeholder{color:#68717F}
+  .form .btn{width:100%}
+  .consent{display:flex;gap:11px;align-items:flex-start;font-size:.85rem;color:#AEB8C6;line-height:1.5}
+  .consent input{width:auto;margin-top:4px;flex-shrink:0}
+  .fine{font-size:.81rem;color:#68717F}
+  .form.off{display:none}
+  .done{display:none;margin-top:30px}
+  .done.on{display:block}
+  .codebox{background:#070A0E;border:1px solid var(--night-3);border-radius:6px;padding:20px;
+    font-family:'IBM Plex Mono';font-size:.87rem;color:#D5DCE6;overflow-x:auto;line-height:2}
+  .codebox .c{color:#68717F}
+  .copy{background:transparent;color:#AEB8C6;border:1px solid var(--night-3);border-radius:4px;
+    padding:9px 16px;font-size:.86rem;cursor:pointer;margin-top:14px;font-family:'Instrument Sans'}
+  .copy:hover{color:#fff;border-color:#68717F}
+
+  /* padrões */
+  .pats{display:grid;grid-template-columns:1fr 1fr;gap:0 56px}
+  .pat{padding:26px 0;border-top:1px solid var(--mist)}
+  .pat .pn{font-family:'IBM Plex Mono';font-size:.75rem;color:var(--ink-3);display:block;margin-bottom:9px}
+  .pat h3{margin-bottom:8px}
+  .pat p{font-size:.95rem;color:var(--ink-2)}
+  .snippet{background:var(--night);border-radius:8px;padding:26px 28px;margin:36px 0 8px;
+    font-family:'IBM Plex Mono';font-size:.87rem;line-height:1.85;color:#D5DCE6;overflow-x:auto}
+  .snippet .kw{color:#7FA5F5;font-weight:500}
+  .snippet .no{color:#E68CC4}
+  .snippet .ok{color:#3FBE95}
+  .snippet .cm{color:#68717F}
+  .cap{font-size:.88rem;color:var(--ink-3);max-width:60ch}
+  details{border-top:1px solid var(--mist);padding:20px 0}
+  summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:20px;font-size:1.02rem}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"+";color:var(--ink-3);font-family:'IBM Plex Mono';font-size:1.2rem;flex-shrink:0;line-height:1}
+  details[open] summary::after{content:"–"}
+  details p{margin-top:14px;color:var(--ink-2);font-size:.97rem}
+
+  footer{background:var(--night);color:#7C8798;padding:44px 0;font-size:.89rem}
+  footer a{color:#AEB8C6}
+
+  @media (max-width:960px){
+    .layers{grid-template-columns:1fr 1fr}
+    .layer:last-child{grid-column:1/-1}
+  }
+  @media (max-width:900px){
+    .cost,.rails,.pats{grid-template-columns:1fr;gap:40px 0}
+    .steps{grid-template-columns:1fr;gap:32px}
+    .row{grid-template-columns:1fr;gap:12px;padding:20px}
+    .weight{text-align:left;max-width:200px}
+    .cmd{grid-template-columns:1fr;gap:6px}
+    .grab{padding:32px 24px}
+    .hero{padding:56px 0 64px}
+    section{padding:60px 0}
+    .router{margin-top:44px}
+    .layers-wrap{padding:60px 0}
+    .layers{grid-template-columns:1fr}
+    .layer:last-child{grid-column:auto}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="#">Maestro<em>Empreendedor Livre</em></a>
+    <a class="out" href="https://empreendedorlivre.com/">empreendedorlivre.com</a>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <span class="tag">Free and open · v2.0</span>
+    <h1>The expensive model plans. The cheap one executes.</h1>
+    <p class="lead">Maestro breaks your project into blocks, decides how risky each one is, and sends each block to the right model — in Claude Code, in Codex, or in any CLI via Adapter SDK. Persistent memory, typed handoffs and universal harness-agnostic protocol.</p>
+    <div class="cta">
+      <a class="btn" href="#download">Download Maestro</a>
+      <small>Claude Code · Codex · any CLI via Adapter SDK</small>
+    </div>
+    <div class="verline">
+      <span class="vpill">version 2.0.0</span>
+      <span>Open source, MIT license. Continuous updates with change log.</span>
+    </div>
+
+    <div class="router">
+      <div class="router-top">
+        <span>Where each type of work goes — Claude Code, Codex or any adapter</span>
+        <span><b>You define it once.</b> Maestro respects it in every block.</span>
+      </div>
+
+      <div class="row h">
+        <div class="who"><b>Haiku 4.5</b><span>complexity 1–2</span></div>
+        <p class="what">Mechanical work, no decisions: repetitive code, migrations from a ready schema, test data, conversions, bulk renaming, documentation.</p>
+        <div class="weight"><div class="wbar"><div class="wfill" style="width:20%"></div></div><span>1× the cost</span></div>
+      </div>
+
+      <div class="row s">
+        <div class="who"><b>Sonnet 4.6</b><span>complexity 3–4</span></div>
+        <p class="what">The bulk of construction: business rules, documented integrations, new features, edge cases already mapped and review of what was delivered.</p>
+        <div class="weight"><div class="wbar"><div class="wfill" style="width:40%"></div></div><span>2× the cost</span></div>
+      </div>
+
+      <div class="row o">
+        <div class="who"><b>Opus 4.6</b><span>complexity 4–5</span></div>
+        <p class="what">Where mistakes get expensive: architecture, contracts between system parts, data modeling and any decision hard to undo later.</p>
+        <div class="weight"><div class="wbar"><div class="wfill" style="width:100%"></div></div><span>5× the cost</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <h2>Running everything on the most powerful model costs several times more</h2>
+    <p class="sec-lead">And doesn't deliver better. Most of a project's work is routine — it doesn't need the most expensive reasoning model. Maestro classifies each block and uses the cheapest one that can handle it.</p>
+
+    <div class="cost">
+      <div>
+        <div class="cbar">
+          <div class="cl"><span>Everything on the most powerful model</span><b>100%</b></div>
+          <div class="ctrack"><div class="cfill fo" style="width:100%"></div></div>
+        </div>
+        <div class="cbar">
+          <div class="cl"><span>Distributed by complexity</span><b>about 1/4</b></div>
+          <div class="ctrack">
+            <div class="cfill fo" style="width:15%"></div>
+            <div class="cfill fs" style="width:60%"></div>
+            <div class="cfill fh" style="width:25%"></div>
+          </div>
+          <div class="keys">
+            <span><i class="fo"></i>Opus 15%</span>
+            <span><i class="fs"></i>Sonnet 60%</span>
+            <span><i class="fh"></i>Haiku 25%</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p>That's a healthy division of labor. Maestro measures yours and warns when the expensive model exceeds a quarter of the cost — which almost always means a specification got ambiguous and someone bumped models by reflex, instead of fixing the text.</p>
+        <p style="margin-top:18px;color:var(--ink-3);font-size:.9rem">Ratio based on API pricing from September 2026. Real savings depend on your project's task mix.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>How it works</h2>
+    <p class="sec-lead">The expensive part happens once. The cheap part repeats until the project is done.</p>
+    <div class="steps">
+      <div class="step">
+        <h3>Plan with the strong model</h3>
+        <p>It writes the specifications, breaks the project into blocks and defines for each one: the complexity, the model, the files it can touch and how to know it's done.</p>
+      </div>
+      <div class="step">
+        <h3>You read and approve</h3>
+        <p>The plan becomes a file you correct before any line is written. It's the only time an error is still free.</p>
+      </div>
+      <div class="step">
+        <h3>Execute with the right model</h3>
+        <p>The manager picks the next released block, sends it to the model the plan defined, calls a reviewer who can't edit anything and only then marks it complete.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Multi-agent layers — dark background -->
+<div class="layers-wrap">
+  <div class="wrap">
+    <h2>True multi-agent</h2>
+    <p class="sec-lead">Version 2.0 adds five layers that make Maestro work with multiple agents, models and harnesses — with no coupling to any of them.</p>
+    <div class="layers">
+      <div class="layer">
+        <span class="tag-sm">memory</span>
+        <span class="layer-icon">🧠</span>
+        <h3>Persistent Memory</h3>
+        <p>Working, Episodic, Semantic (FTS5 + entities + links) and Procedural Memory. Markdown as source of truth, SQLite as a zero-reconstructible index.</p>
+      </div>
+      <div class="layer">
+        <span class="tag-sm">routing</span>
+        <span class="layer-icon">⚡</span>
+        <h3>Intelligent Routing</h3>
+        <p>ProviderRegistry usage-aware and capacity-aware. CEV telemetry (Cost-Efficiency-Velocity) per provider, without platform lock-in.</p>
+      </div>
+      <div class="layer">
+        <span class="tag-sm">handoff</span>
+        <span class="layer-icon">🤝</span>
+        <h3>Typed Handoffs</h3>
+        <p>HandoffManager with exactly-once semantics, workstreams with exclusive lease and cross-agent resume. Claude passes to Codex without losing context or double-delivering.</p>
+      </div>
+      <div class="layer">
+        <span class="tag-sm">protocol</span>
+        <span class="layer-icon">📦</span>
+        <h3>Universal Protocol</h3>
+        <p>Universal Context Packet (UCP) and Event Protocol (UEP) — harness-agnostic contracts with trust boundaries and built-in PII and credentials scanner.</p>
+      </div>
+      <div class="layer">
+        <span class="tag-sm">adapters</span>
+        <span class="layer-icon">🔌</span>
+        <h3>Adapter SDK</h3>
+        <p>Manifest, conformance suite and GenericCLI. Any command-line tool becomes an adapter with a JSON. Claude Code and Codex already included and certified.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <h2>The patterns it enforces</h2>
+    <p class="sec-lead">Delegating work to a cheaper model only works with method. These are the patterns that agent engineering has consolidated — and they come built-in, no configuration needed.</p>
+
+    <div class="snippet">
+<span class="cm"># Common acceptance criterion — model interprets as it pleases</span><br>
+<span class="no">"The system should handle errors appropriately"</span><br><br>
+<span class="cm"># Same criterion in EARS — becomes a direct test</span><br>
+<span class="ok">IF</span> the database is unavailable<br>
+<span class="ok">THEN THE SYSTEM MUST</span> respond 503 and log the error.
+    </div>
+    <p class="cap">A criterion written this way becomes nearly a one-to-one test case. That's what makes the spec a contract instead of advice.</p>
+
+    <div class="pats" style="margin-top:52px">
+      <div class="pat">
+        <span class="pn">specification</span>
+        <h3>Criteria in EARS notation</h3>
+        <p>Pattern from the aerospace industry. Each criterion has explicit subject, number instead of adjective and a single observable behavior. If you can't write the test assertion, the criterion is still vague.</p>
+      </div>
+      <div class="pat">
+        <span class="pn">verification</span>
+        <h3>Test before code</h3>
+        <p>Since each criterion is already a test, the executor writes tests first, sees them fail and implements until they pass. Green test is the only objective signal of done — without it, done is the model's opinion.</p>
+      </div>
+      <div class="pat">
+        <span class="pn">context</span>
+        <h3>One task per session</h3>
+        <p>Each block runs isolated, getting only its specification and the files it can touch. A full window degrades predictably: the model loses exactly what's in the middle.</p>
+      </div>
+      <div class="pat">
+        <span class="pn">continuity</span>
+        <h3>Checkpoint each block</h3>
+        <p>Long session is compacted and detail is lost. One commit per completed block, plus the progress file, rebuild the state without depending on conversation memory.</p>
+      </div>
+      <div class="pat">
+        <span class="pn">cost</span>
+        <h3>Budget per task</h3>
+        <p>Each block has a round limit. Exceeding it isn't a sign of weak model — it's a sign of ambiguous spec. The system stops and returns instead of making the same error more expensive.</p>
+      </div>
+      <div class="pat">
+        <span class="pn">constraint</span>
+        <h3>No generic advice</h3>
+        <p>A 2026 study of 138 real repositories showed that model-generated instruction files hurt agent performance. Here, "use clean code" is banned: style is linter work, not context.</p>
+      </div>
+      <div class="pat">
+        <span class="pn">planning</span>
+        <h3>Risky work becomes two blocks</h3>
+        <p>A task with uncertain design is split: the strong model designs and writes the spec; the medium one implements. Sending the entire task to the strong model is what inflates cost without improving anything.</p>
+      </div>
+      <div class="pat">
+        <span class="pn">review</span>
+        <h3>Who writes doesn't approve</h3>
+        <p>The reviewer runs in a separate session with no permission to edit files. They check criterion by criterion, with evidence, and even look for tests that pass without exercising anything.</p>
+      </div>
+      <div class="pat">
+        <span class="pn">memory</span>
+        <h3>Memory between sessions</h3>
+        <p>Working Memory for active context, Episodic Memory for decision history and Semantic Memory for entity search. The SQLite index is zero-reconstructible — there's never corrupt state you can't recover.</p>
+      </div>
+      <div class="pat">
+        <span class="pn">multi-agent</span>
+        <h3>Handoff without double delivery</h3>
+        <p>Exactly-once semantics guarantee that a handoff between Claude and Codex is never executed twice. Workstream lease prevents two agents from editing the same context at the same time.</p>
+      </div>
+      <div class="pat">
+        <span class="pn">scale</span>
+        <h3>Independent phases in the same project</h3>
+        <p>With <code>--phase &lt;name&gt;</code>, each project phase has its own plan in <code>plan/&lt;name&gt;/</code>. Old plans keep working without migration — just don't pass the argument.</p>
+      </div>
+      <div class="pat">
+        <span class="pn">speed</span>
+        <h3>Two blocks at once — only when safe</h3>
+        <p><code>--parallel</code> dispatches a batch when no block depends on another and the files each can touch are provably disjoint. On any ambiguity, it serializes. Commits always one at a time.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Thirteen commands</h2>
+    <p class="sec-lead">No manual configuration. Setup talks to you, reads what already exists in the repository and builds the plan by itself.</p>
+    <div class="cmds">
+      <div class="cmd"><span class="mono">/maestro:setup</span><p>Detects what already exists, asks up to six questions and generates the plan. With <code>--phase &lt;name&gt;</code> creates a parallel plan without touching the existing one</p></div>
+      <div class="cmd"><span class="mono">/maestro:status</span><p>Shows the board and distribution by model. <code>--block &lt;ID&gt;</code> displays all details and block metric history. Runs on your machine, consumes nothing</p></div>
+      <div class="cmd"><span class="mono">/maestro:next</span><p>Executes the next released block and calls the reviewer. <code>--dry-run</code> shows without dispatching; <code>--parallel</code> dispatches up to two blocks at once when there's no file conflict</p></div>
+      <div class="cmd"><span class="mono">/maestro:plan</span><p>Writes the specification for a new block with the strong model</p></div>
+      <div class="cmd"><span class="mono">/maestro:replan</span><p>Adjusts the plan when reality changes</p></div>
+      <div class="cmd"><span class="mono">/maestro:costs</span><p>Shows planned distribution by model and reminds you to check <code>/context</code> and <code>/usage</code>, Claude Code's native cost commands</p></div>
+      <div class="cmd"><span class="mono">/maestro:resume</span><p>Recovers blocks interrupted by crash or session compaction — analyzes git and offers to resume, reset or discard</p></div>
+      <div class="cmd"><span class="mono">/maestro:review &lt;ID&gt;</span><p>Audit review of any completed block, independent of execution flow</p></div>
+      <div class="cmd"><span class="mono">/maestro:unlock &lt;ID&gt;</span><p>Clears the lock on a block without editing JSON manually. Requires explicit confirmation before saving</p></div>
+      <div class="cmd"><span class="mono">/maestro:edit &lt;ID&gt;</span><p>Point change in a block's specification, or full regeneration with the strong model. Validates the plan at the end</p></div>
+      <div class="cmd"><span class="mono">/maestro:rollback &lt;ID&gt;</span><p>Undoes an approved block using <code>git revert</code> — never <code>git reset</code>. Checks clean tree before touching anything</p></div>
+      <div class="cmd"><span class="mono">/maestro:export</span><p>Generates <code>plan/REPORT.md</code> with complete state, specifications and metrics. Ready to share with the team</p></div>
+      <div class="cmd cmd-new"><span class="mono">/maestro:migrate</span><p><b>New in 2.0.</b> Migrates legacy structure (v1.x) to the new layer architecture with automatic backup, conversion report and rollback on failure</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>What it prevents</h2>
+    <p class="sec-lead">Delivering work to a cheap model only works with rails. These are checked before any block is dispatched.</p>
+    <div class="rails">
+      <div class="rail">
+        <h3>Critical task doesn't fall to cheap model</h3>
+        <p>Blocks where a mistake is irreversible stay locked to the strong model — both to execute and to review.</p>
+      </div>
+      <div class="rail">
+        <h3>Who writes doesn't approve</h3>
+        <p>The reviewer runs in a separate session with no permission to edit files. They approve or reject, with evidence for each criterion.</p>
+      </div>
+      <div class="rail">
+        <h3>Block without information doesn't dispatch</h3>
+        <p>If a decision from you is missing, a credential or data, the block stays marked as locked — instead of the model filling the gap on its own.</p>
+      </div>
+      <div class="rail">
+        <h3>Failed twice? Fix the text, not the model</h3>
+        <p>When the same block fails again, the cause is almost always an ambiguous spec. Bumping the model would only make the same error more expensive.</p>
+      </div>
+      <div class="rail">
+        <h3>PII and credentials never enter the context</h3>
+        <p>The Universal Context Packet has a built-in scanner that blocks personal email, phone, CPF, API keys and other secrets before any data leaves the machine.</p>
+      </div>
+      <div class="rail">
+        <h3>Handoff delivered exactly once</h3>
+        <p>Exactly-once semantics guarantee that a transfer between agents is never consumed twice — even under true concurrency of multiple processes.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="download">
+  <div class="wrap">
+    <div class="grab">
+      <h2>Download Maestro</h2>
+      <p>Leave your email and the installation commands appear here instantly. No cost, no card. Works in Claude Code, Codex and any CLI with a JSON adapter.</p>
+
+      <form class="form" id="leadForm" novalidate>
+        <div>
+          <label for="nome">Name</label>
+          <input type="text" id="nome" name="nome" placeholder="What we call you" required>
+        </div>
+        <div>
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" placeholder="you@email.com" required>
+        </div>
+        <label class="consent">
+          <input type="checkbox" id="ok" required>
+          <span>I want to receive the link and news about AI and automation from Empreendedor Livre. I can leave anytime.</span>
+        </label>
+        <button class="btn" type="submit">Unlock the download</button>
+        <p class="fine">Your data stays with us and is not sold.</p>
+      </form>
+
+      <div class="done" id="done">
+        <p style="color:#fff;font-weight:600;margin-bottom:12px">Done. Run in the terminal, inside your project:</p>
+        <div class="codebox">
+<span class="c"># 1. add the repository</span><br>
+/plugin marketplace add <span id="repoInline">YOUR-USER/maestro</span><br><br>
+<span class="c"># 2. install</span><br>
+/plugin install maestro@maestro<br><br>
+<span class="c"># 3. configure (it talks to you)</span><br>
+/maestro:setup
+        </div>
+        <button class="copy" id="copyBtn">Copy commands</button>
+        <p style="margin-top:18px;color:#AEB8C6"><a href="#" id="repoLink" style="color:#fff">View on GitHub</a> — open source, no server in between.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Questions</h2>
+    <details>
+      <summary>What do I need to use it?</summary>
+      <p>Claude Code on any paid plan, and a project you already work on. Maestro is not a separate service: it runs inside Claude Code, on your account. Works in the terminal, VS Code, JetBrains and the desktop app.</p>
+    </details>
+    <details>
+      <summary>Does it work with models other than Claude?</summary>
+      <p>Yes. Version 2.0 includes the Adapter SDK: any tool with a valid <code>adapter.manifest.json</code> file passes the conformance suite and can execute blocks. Codex is already included and certified. A generic adapter for any CLI also comes out of the box — no plugin needed.</p>
+    </details>
+    <details>
+      <summary>How do I automate it in CI/CD?</summary>
+      <p>Use headless mode: <code>python integrations/relay/headless_cli.py --headless --dry-run &lt;ID&gt;</code> — returns code 0 or 1, never asks for interactive input. An example workflow for GitHub Actions is in <code>.github/workflows/maestro-ci.yml</code> in the repository.</p>
+    </details>
+    <details>
+      <summary>Does it work for projects that aren't programming?</summary>
+      <p>Yes, as long as work can be broken into blocks with an objective way to say it's done. Research, serial content production and data migration work well. What doesn't fit is work where "done" is a matter of taste.</p>
+    </details>
+    <details>
+      <summary>Does it use my Claude quota?</summary>
+      <p>Yes, because whoever executes is Claude Code with your account. The question is how much: using the right model for each task makes the same build consume well less of your limit.</p>
+    </details>
+    <details>
+      <summary>Does my code leave my machine?</summary>
+      <p>It doesn't pass through any server of ours. Maestro is a set of text files that runs inside your Claude Code. Plus, version 2.0 adds a PII and credentials scanner in the Universal Context Packet — no sensitive data leaves without being detected first.</p>
+    </details>
+    <details>
+      <summary>Can I change the rules?</summary>
+      <p>You can. Everything is text files in your repository: the agents, the commands and the plan. Edit freely, including which models go into each complexity level.</p>
+    </details>
+    <details>
+      <summary>Is it really free, or does it become paid later?</summary>
+      <p>It's free and open. If you want to give back, use it and tell us what worked and what broke — that's what makes the next version better.</p>
+    </details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Maestro v2.0.0 · MIT · A project by <a href="https://empreendedorlivre.com/">Empreendedor Livre</a>.
+  </div>
+</footer>
+
+<script>
+(function(){
+  var form = document.getElementById('leadForm');
+  var done = document.getElementById('done');
+
+  /* ========= CONFIGURE HERE =========
+     Paste your form service endpoint (Formspree, Brevo, Mailchimp,
+     Google Forms or a WordPress webhook). Empty = only unlock link, no save. */
+  var ENDPOINT = 'https://formspree.io/f/xqpkglra';
+  var REPO = 'torvik/Maestro';
+  /* ================================== */
+
+  document.getElementById('repoInline').textContent = REPO;
+  document.getElementById('repoLink').href = 'https://github.com/' + REPO;
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var nome = document.getElementById('nome').value.trim();
+    var email = document.getElementById('email').value.trim();
+    if(!nome || !email || email.indexOf('@') < 1 || !document.getElementById('ok').checked){
+      alert('Fill in name, a valid email and check the consent.');
+      return;
+    }
+    var reveal = function(){
+      form.classList.add('off');
+      done.classList.add('on');
+      done.scrollIntoView({block:'center'});
+    };
+    if(ENDPOINT){
+      fetch(ENDPOINT,{method:'POST',
+        headers:{'Content-Type':'application/json','Accept':'application/json'},
+        body:JSON.stringify({nome:nome,email:email,origem:'landing-maestro'})
+      }).then(reveal).catch(reveal);
+    } else { reveal(); }
+  });
+
+  document.getElementById('copyBtn').addEventListener('click', function(){
+    var t = '/plugin marketplace add ' + REPO + '\n/plugin install maestro@maestro\n/maestro:setup';
+    navigator.clipboard.writeText(t).then(function(){
+      var b = document.getElementById('copyBtn');
+      b.textContent = 'Copied';
+      setTimeout(function(){ b.textContent = 'Copy commands'; }, 1800);
+    });
+  });
+})();
+</script>
+</body>
+</html>
