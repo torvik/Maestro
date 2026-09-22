@@ -136,7 +136,8 @@ projeto**. Caminho absoluto expõe a árvore de diretórios do usuário em todo 
 ## JSON Schema
 
 Fonte de verdade: `packages.core.protocol.schema.UEP_EVENT_JSON_SCHEMA` e
-`UEP_JSON_SCHEMA`. O teste T13 falha se este documento divergir das dataclasses.
+`UEP_JSON_SCHEMA`. O teste T27 falha se o JSON abaixo divergir dessas constantes
+(comparação literal); T13 cobre a consistência das constantes com as dataclasses.
 
 ### Evento
 
@@ -181,7 +182,31 @@ Fonte de verdade: `packages.core.protocol.schema.UEP_EVENT_JSON_SCHEMA` e
     "run_id": { "type": "string" },
     "ucp_id": { "type": "string" },
     "agent": { "type": "string" },
-    "events": { "$comment": "array of uep-event-v1.json", "type": "array" }
+    "events": {
+      "type": "array",
+      "items": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$id": "https://maestro.dev/schemas/uep-event-v1.json",
+        "title": "Universal Event Protocol event",
+        "type": "object",
+        "required": ["event_type", "block_id"],
+        "additionalProperties": true,
+        "properties": {
+          "schema_version": { "type": "integer", "minimum": 1 },
+          "event_type": {
+            "type": "string",
+            "description": "One of the six protocol events. Readers must accept unknown values from future producers without failing."
+          },
+          "block_id": { "type": "string", "minLength": 1 },
+          "sequence": { "type": "integer", "minimum": 0 },
+          "timestamp": { "type": "string" },
+          "agent": { "type": "string" },
+          "run_id": { "type": "string" },
+          "event_id": { "type": "string" },
+          "payload": { "type": "object" }
+        }
+      }
+    }
   }
 }
 ```

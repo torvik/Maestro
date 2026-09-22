@@ -134,8 +134,14 @@ Duas regras de detecção, ambas necessárias:
 1. **Nome da chave** — dispara só quando o valor é string não vazia. A chave é
    quebrada em tokens por `[^a-z0-9]+`, então `author` não dispara `auth` e
    `max_tokens` (valor numérico) não dispara `token`.
-2. **Padrão do valor** — regex de alta confiança sobre toda string. Aceita-se
-   falso positivo; não se aceita falso negativo.
+2. **Padrão do valor** — regex de alta confiança sobre toda string. Cobre
+   credencial (chave de API, token, bloco de chave privada, atribuição de env)
+   **e PII do usuário** (e-mail, telefone brasileiro, CPF), que a tabela acima
+   proíbe no mesmo nível. Aceita-se falso positivo; não se aceita falso negativo.
+
+A regra 2 olha o **valor**, nunca o nome da chave: `{"email": "..."}` como nome
+de campo pode ser metadado legítimo de quem produziu o pacote; um e-mail como
+*valor* de `conventions` é PII e é barrado.
 
 Escanear `context_files[].content` é o ponto central: o vazamento realista não é
 alguém digitar uma chave num campo `api_key`, é o Context Builder incluir um

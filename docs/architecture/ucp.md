@@ -91,8 +91,9 @@ adapter que consome o UCP pode. Duas obrigações que **não** são verificávei
 
 ## JSON Schema
 
-Fonte de verdade: `packages.core.protocol.schema.UCP_JSON_SCHEMA`. O teste T13
-falha se este documento divergir das dataclasses.
+Fonte de verdade: `packages.core.protocol.schema.UCP_JSON_SCHEMA`. O teste T27
+falha se o JSON abaixo divergir dessa constante (comparação literal); T13 cobre
+a consistência da constante com as dataclasses.
 
 ```json
 {

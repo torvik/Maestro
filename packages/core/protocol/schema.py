@@ -282,6 +282,27 @@ _SECRET_VALUE_PATTERNS = (
     ),
 )
 
+#: Personal data patterns. The trust boundary (protocol.md) puts user PII at the
+#: same level as a credential: it must not cross into an executor payload.
+#: Scanned over *values* only -- `{"email": ...}` as a key name is legitimate
+#: metadata, an e-mail address as a value of `conventions` is PII.
+_PII_REASON = "PII: email/phone/document"
+
+_PII_VALUE_PATTERNS = (
+    (_PII_REASON, re.compile(r"\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b")),
+    # Brazilian phone, with or without +55 and area code. The leading lookbehind
+    # (instead of \b) is what lets the '+' of '+55' start the match.
+    (
+        _PII_REASON,
+        re.compile(r"(?<!\w)(?:\+55\s?)?(?:\(?\d{2}\)?\s?)(?:9\s?\d{4}|\d{4})-?\d{4}\b"),
+    ),
+    # CPF, punctuated or bare.
+    (_PII_REASON, re.compile(r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b")),
+)
+
+#: Every value rule the scanner applies, credentials first.
+_VALUE_PATTERNS = _SECRET_VALUE_PATTERNS + _PII_VALUE_PATTERNS
+
 
 @dataclass(frozen=True)
 class SecretFinding:
@@ -312,7 +333,7 @@ def _key_is_denied(key: str) -> bool:
 
 
 def _scan_value(value: str, path: str, findings: List[SecretFinding]) -> None:
-    for reason, pattern in _SECRET_VALUE_PATTERNS:
+    for reason, pattern in _VALUE_PATTERNS:
         if pattern.search(value):
             findings.append(SecretFinding(path, reason))
             return
@@ -324,7 +345,7 @@ MAX_SCAN_DEPTH = 64
 
 
 def scan_for_secrets(obj: Any, path: str = "$") -> List[SecretFinding]:
-    """Walk `obj` and report every string leaf that looks like a credential.
+    """Walk `obj` and report every string leaf that looks like a credential or PII.
 
     Two independent rules (see docs/architecture/protocol.md):
       1. key name denylist -- fires only when the value is a non-empty string,
@@ -332,6 +353,7 @@ def scan_for_secrets(obj: Any, path: str = "$") -> List[SecretFinding]:
       2. value pattern matching -- applied to every string leaf, including
          `context_files[].content`, because the realistic leak is a `.env`
          swept in by a glob, not someone typing a key into an `api_key` field.
+         Covers credentials and user PII (e-mail, Brazilian phone, CPF).
 
     Raises ValueError on a cyclic or absurdly deep payload: a payload that
     cannot be fully scanned must be rejected, never waved through.
@@ -391,7 +413,7 @@ def assert_no_secrets(obj: Any, where: str = "payload") -> None:
         return
     locations = ", ".join(sorted(str(f) for f in findings))
     raise UCPSecurityError(
-        f"{where} must not carry credentials or secrets; "
+        f"{where} must not carry credentials, secrets or user PII; "
         f"offending field(s): {locations}. "
         "Values are intentionally omitted from this message. "
         "Use protocol.redact() to strip them before building the packet."
@@ -411,7 +433,7 @@ def _redact(obj: Any, key_denied: bool, depth: int) -> Any:
     if isinstance(obj, str):
         if key_denied and obj.strip():
             return _REDACTED
-        for _reason, pattern in _SECRET_VALUE_PATTERNS:
+        for _reason, pattern in _VALUE_PATTERNS:
             if pattern.search(obj):
                 return _REDACTED
         return obj

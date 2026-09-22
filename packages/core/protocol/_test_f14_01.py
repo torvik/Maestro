@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import ast
 import dataclasses
+import json
 import os
 import sys
 
@@ -28,6 +29,7 @@ from packages.core.protocol import (  # noqa: E402
     UCP_JSON_SCHEMA,
     UEP,
     UEP_EVENT_JSON_SCHEMA,
+    UEP_JSON_SCHEMA,
     BlockSpec,
     Budget,
     ContextFile,
@@ -416,6 +418,8 @@ def t12_budget_is_all_optional():
 
 
 def t13_json_schema_matches_dataclasses():
+    """Verifica que UCP_JSON_SCHEMA e UEP_JSON_SCHEMA sao consistentes com as
+    dataclasses Python (nao verifica sincronia com os .md -- isso e T27)."""
     pairs = (
         (UCP_JSON_SCHEMA, UCP, "UCP"),
         (BLOCK_SPEC_JSON_SCHEMA, BlockSpec, "BlockSpec"),
@@ -761,6 +765,99 @@ def t24_unscannable_payload_is_rejected():
     check(hijack.extensions.get("extra") == 1, "T24 genuine extension preserved")
 
 
+def t25_pii_in_conventions():
+    """PII do usuario esta na mesma tabela normativa que credencial (spec 3.1):
+    e-mail pessoal em `conventions` nao pode atravessar a fronteira."""
+
+    def build():
+        return UCP(
+            block_spec={"block_id": "BLOCO-EXEMPLO"},
+            conventions={"contato": "joao.silva@clienteprivado.com.br"},
+        )
+
+    expect_raises(UCPSecurityError, build, "T25 personal e-mail in conventions is rejected")
+    try:
+        build()
+    except UCPSecurityError as exc:
+        message = str(exc)
+        check(
+            "joao.silva@clienteprivado.com.br" not in message,
+            "T25 the PII value never appears in the error message",
+        )
+        check("conventions.contato" in message, "T25 the error names the offending path")
+        check("PII" in message, "T25 the finding is labelled as PII")
+
+    check(
+        scan_for_secrets({"cpf": "123.456.789-09"}),
+        "T25 a CPF value is caught",
+    )
+    cleaned = redact({"contato": "joao.silva@clienteprivado.com.br"})
+    check(cleaned["contato"] == "[REDACTED]", "T25 redact() strips the e-mail")
+
+
+def t26_pii_in_context_file():
+    """O vazamento realista nao e alguem digitar PII num campo `cpf`: e um
+    arquivo de contexto varrido por glob carregando dado de cliente."""
+    body = "# contatos\nsuporte: +55 11 98888-7777\n"
+
+    expect_raises(
+        UCPSecurityError,
+        lambda: UCP(
+            block_spec={"block_id": "BLOCO-EXEMPLO"},
+            context_files=[{"path": "contatos.md", "content": body}],
+        ),
+        "T26 brazilian phone in context_files is rejected",
+    )
+
+    findings = scan_for_secrets({"context_files": [{"path": "x.md", "content": body}]})
+    check(findings, "T26 scanner reports a finding for the phone number")
+    check(
+        all("98888" not in finding.path for finding in findings),
+        "T26 findings carry a path, never a value",
+    )
+    check(
+        scan_for_secrets({"tel": "11 98888-7777"}),
+        "T26 phone without the country code is caught too",
+    )
+    check(
+        not scan_for_secrets({"created_at": "2026-09-22T10:15:30Z"}),
+        "T26 an ISO-8601 timestamp is not a phone number",
+    )
+    check(
+        not scan_for_secrets({"ucp_id": "U-20260922T101530-a1b2c3d4"}),
+        "T26 a generated id is not a phone number",
+    )
+
+
+def t27_docs_embed_the_python_schemas():
+    """Os .md publicam o JSON Schema; a constante Python e a fonte de verdade.
+    Este teste le os documentos e compara literalmente -- foi a ausencia dele
+    que deixou o bloco 'Stream' de uep.md divergir do codigo."""
+    docs = os.path.join(_ROOT, "docs", "architecture")
+
+    def json_blocks(name):
+        with open(os.path.join(docs, name), encoding="utf-8") as handle:
+            text = handle.read()
+        blocks = []
+        for chunk in text.split("```json")[1:]:
+            body = chunk.split("```")[0]
+            try:
+                blocks.append(json.loads(body))
+            except ValueError:
+                continue
+        return blocks
+
+    ucp_blocks = json_blocks("ucp.md")
+    check(UCP_JSON_SCHEMA in ucp_blocks, "T27 ucp.md embeds UCP_JSON_SCHEMA verbatim")
+
+    uep_blocks = json_blocks("uep.md")
+    check(
+        UEP_EVENT_JSON_SCHEMA in uep_blocks,
+        "T27 uep.md embeds UEP_EVENT_JSON_SCHEMA verbatim",
+    )
+    check(UEP_JSON_SCHEMA in uep_blocks, "T27 uep.md embeds UEP_JSON_SCHEMA verbatim")
+
+
 TESTS = (
     ("T01", t01_required_fields),
     ("T02", t02_unknown_field_is_forward_compatible),
@@ -786,6 +883,9 @@ TESTS = (
     ("T22", t22_digest_is_deterministic),
     ("T23", t23_negative_budget_is_rejected),
     ("T24", t24_unscannable_payload_is_rejected),
+    ("T25", t25_pii_in_conventions),
+    ("T26", t26_pii_in_context_file),
+    ("T27", t27_docs_embed_the_python_schemas),
 )
 
 
