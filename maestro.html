@@ -4,20 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Maestro — o modelo caro planeja, o barato executa | Empreendedor Livre</title>
-<meta name="description" content="Plugin gratuito para Claude Code que quebra seu projeto em blocos e manda cada um para o modelo certo. Menos custo, mesma qualidade. Baixe grátis.">
-<meta property="og:title" content="Maestro — orquestre seus projetos no Claude Code">
-<meta property="og:description" content="O modelo caro planeja. O barato executa. Plugin gratuito para Claude Code.">
+<meta name="description" content="Plugin gratuito para Claude Code que quebra seu projeto em blocos, roteia para o modelo certo e tem memória, handoffs e protocolo universal para múltiplos agentes. Baixe grátis.">
+<meta property="og:title" content="Maestro 2.0 — orquestre projetos multi-agente no Claude Code">
+<meta property="og:description" content="O modelo caro planeja. O barato executa. Memória persistente, handoffs tipados e protocolo universal para qualquer agente.">
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --night:#0E1116; --night-2:#171C24; --night-3:#242C37;
+    --night:#0E1116; --night-2:#171C24; --night-3:#242C37; --night-4:#1C2330;
     --paper:#FCFCFD; --paper-2:#F1F3F6;
     --ink:#141A21; --ink-2:#4A5462; --ink-3:#79838F;
     --mist:#D5DAE1;
     --haiku:#0F7D5F; --sonnet:#2A5EDB; --opus:#A32C78;
+    --accent:#58a6ff;
     --maxw:1140px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -71,10 +72,14 @@
   .wfill{height:100%;border-radius:100px}
   .h .wfill{background:#3FBE95} .s .wfill{background:#5B89EE} .o .wfill{background:#D96BB4}
   .weight span{font-size:.78rem;color:#7C8798;font-family:'IBM Plex Mono'}
+  .verline{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.85rem;color:#7C8798;margin-top:24px}
+  .vpill{font-family:'IBM Plex Mono';font-size:.78rem;color:#AEB8C6;border:1px solid var(--night-3);
+    border-radius:100px;padding:3px 11px}
 
   section{padding:88px 0;border-top:1px solid var(--mist)}
   .sec-lead{color:var(--ink-2);font-size:1.06rem;margin-bottom:44px;max-width:60ch}
 
+  /* custo */
   .cost{display:grid;grid-template-columns:1.15fr .85fr;gap:60px;align-items:start}
   .cbar{margin-bottom:26px}
   .cbar .cl{display:flex;justify-content:space-between;align-items:baseline;gap:16px;margin-bottom:9px}
@@ -86,6 +91,7 @@
   .keys{display:flex;gap:22px;flex-wrap:wrap;font-size:.88rem;color:var(--ink-2);margin-top:14px}
   .keys i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:7px}
 
+  /* passos */
   .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:44px;counter-reset:s}
   .step{counter-increment:s;border-top:2px solid var(--ink);padding-top:18px}
   .step::before{content:"Passo " counter(s);display:block;font-family:'IBM Plex Mono';font-size:.78rem;
@@ -93,18 +99,35 @@
   .step h3{margin-bottom:10px}
   .step p{font-size:.96rem;color:var(--ink-2)}
 
+  /* camadas multi-agente */
+  .layers-wrap{background:var(--night);padding:88px 0;border-top:none}
+  .layers-wrap .sec-lead{color:#8B96A5}
+  .layers-wrap h2{color:#fff}
+  .layers{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--night-3);
+    border:1px solid var(--night-3);border-radius:8px;overflow:hidden;margin-top:44px}
+  .layer{background:var(--night-2);padding:26px 22px}
+  .layer-icon{font-size:1.5rem;margin-bottom:14px;display:block}
+  .layer h3{font-size:.97rem;font-weight:700;color:#fff;margin-bottom:8px;letter-spacing:-.015em}
+  .layer p{font-size:.88rem;color:#8B96A5;line-height:1.55;max-width:none}
+  .layer .tag-sm{display:inline-block;font-family:'IBM Plex Mono';font-size:.7rem;color:#4FD1A5;
+    border:1px solid #1E5A48;background:#0F2A22;border-radius:100px;padding:2px 9px;margin-bottom:10px}
+
+  /* comandos */
   .cmds{border:1px solid var(--mist);border-radius:8px;overflow:hidden;background:#fff}
   .cmd{display:grid;grid-template-columns:230px 1fr;gap:24px;padding:18px 26px;
     border-top:1px solid var(--paper-2);align-items:baseline}
   .cmd:first-child{border-top:none}
   .cmd .mono{font-weight:500;font-size:.94rem;color:var(--ink)}
   .cmd p{color:var(--ink-2);font-size:.96rem;max-width:none}
+  .cmd-new .mono{color:var(--sonnet)}
 
+  /* rails */
   .rails{display:grid;grid-template-columns:1fr 1fr;gap:0 56px}
   .rail{padding:24px 0;border-top:1px solid var(--mist)}
   .rail h3{margin-bottom:7px}
   .rail p{font-size:.95rem;color:var(--ink-2)}
 
+  /* download */
   .grab{background:var(--night);color:#fff;border-radius:10px;padding:56px}
   .grab h2{color:#fff}
   .grab>p{color:#AEB8C6}
@@ -127,6 +150,7 @@
     padding:9px 16px;font-size:.86rem;cursor:pointer;margin-top:14px;font-family:'Instrument Sans'}
   .copy:hover{color:#fff;border-color:#68717F}
 
+  /* padrões */
   .pats{display:grid;grid-template-columns:1fr 1fr;gap:0 56px}
   .pat{padding:26px 0;border-top:1px solid var(--mist)}
   .pat .pn{font-family:'IBM Plex Mono';font-size:.75rem;color:var(--ink-3);display:block;margin-bottom:9px}
@@ -139,9 +163,6 @@
   .snippet .ok{color:#3FBE95}
   .snippet .cm{color:#68717F}
   .cap{font-size:.88rem;color:var(--ink-3);max-width:60ch}
-  .verline{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.85rem;color:#7C8798;margin-top:24px}
-  .vpill{font-family:'IBM Plex Mono';font-size:.78rem;color:#AEB8C6;border:1px solid var(--night-3);
-    border-radius:100px;padding:3px 11px}
   details{border-top:1px solid var(--mist);padding:20px 0}
   summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:20px;font-size:1.02rem}
   summary::-webkit-details-marker{display:none}
@@ -152,6 +173,10 @@
   footer{background:var(--night);color:#7C8798;padding:44px 0;font-size:.89rem}
   footer a{color:#AEB8C6}
 
+  @media (max-width:960px){
+    .layers{grid-template-columns:1fr 1fr}
+    .layer:last-child{grid-column:1/-1}
+  }
   @media (max-width:900px){
     .cost,.rails,.pats{grid-template-columns:1fr;gap:40px 0}
     .steps{grid-template-columns:1fr;gap:32px}
@@ -162,6 +187,9 @@
     .hero{padding:56px 0 64px}
     section{padding:60px 0}
     .router{margin-top:44px}
+    .layers-wrap{padding:60px 0}
+    .layers{grid-template-columns:1fr}
+    .layer:last-child{grid-column:auto}
   }
   @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto}}
 </style>
@@ -177,15 +205,15 @@
 
 <div class="hero">
   <div class="wrap">
-    <span class="tag">Gratuito e aberto</span>
+    <span class="tag">Gratuito e aberto · v2.0</span>
     <h1>O modelo caro planeja. O barato executa.</h1>
-    <p class="lead">O Maestro quebra o seu projeto em blocos, decide o quanto cada um é arriscado e manda cada bloco para o modelo certo. Você acompanha por cinco comandos dentro do Claude Code.</p>
+    <p class="lead">O Maestro quebra o seu projeto em blocos, decide o quanto cada um é arriscado e manda cada bloco para o modelo certo. Memória persistente, handoffs tipados e protocolo universal para múltiplos agentes.</p>
     <div class="cta">
       <a class="btn" href="#baixar">Baixar o Maestro</a>
       <small>Funciona com o Claude Code em qualquer plano pago</small>
     </div>
     <div class="verline">
-      <span class="vpill">versão 1.3.1</span>
+      <span class="vpill">versão 2.0.0</span>
       <span>Código aberto, licença MIT. Atualizações contínuas com registro de mudanças.</span>
     </div>
 
@@ -202,13 +230,13 @@
       </div>
 
       <div class="row s">
-        <div class="who"><b>Sonnet 5</b><span>complexidade 3–4</span></div>
+        <div class="who"><b>Sonnet 4.6</b><span>complexidade 3–4</span></div>
         <p class="what">O grosso da construção: regras de negócio, integrações documentadas, funcionalidades novas, casos de borda já mapeados e a revisão do que foi entregue.</p>
         <div class="weight"><div class="wbar"><div class="wfill" style="width:40%"></div></div><span>2× o custo</span></div>
       </div>
 
       <div class="row o">
-        <div class="who"><b>Opus 5</b><span>complexidade 4–5</span></div>
+        <div class="who"><b>Opus 4.6</b><span>complexidade 4–5</span></div>
         <p class="what">Onde errar sai caro: arquitetura, contratos entre partes do sistema, modelagem de dados e qualquer decisão difícil de voltar atrás depois.</p>
         <div class="weight"><div class="wbar"><div class="wfill" style="width:100%"></div></div><span>5× o custo</span></div>
       </div>
@@ -270,6 +298,45 @@
   </div>
 </section>
 
+<!-- Camadas multi-agente — fundo escuro -->
+<div class="layers-wrap">
+  <div class="wrap">
+    <h2>Multi-agente de verdade</h2>
+    <p class="sec-lead">A versão 2.0 adiciona cinco camadas que fazem o Maestro funcionar com múltiplos agentes, modelos e harnesses — sem acoplamento com nenhum deles.</p>
+    <div class="layers">
+      <div class="layer">
+        <span class="tag-sm">memory</span>
+        <span class="layer-icon">🧠</span>
+        <h3>Memória persistente</h3>
+        <p>Working, Episodic, Semantic (FTS5 + entidades + links) e Procedural Memory. Markdown como fonte de verdade, SQLite como índice reconstruível do zero.</p>
+      </div>
+      <div class="layer">
+        <span class="tag-sm">providers</span>
+        <span class="layer-icon">⚡</span>
+        <h3>Roteamento inteligente</h3>
+        <p>ProviderRegistry usage-aware e capacity-aware. Telemetria CEV (Custo-Eficiência-Velocidade) por provider, sem lock-in de plataforma.</p>
+      </div>
+      <div class="layer">
+        <span class="tag-sm">handoff</span>
+        <span class="layer-icon">🤝</span>
+        <h3>Handoffs tipados</h3>
+        <p>HandoffManager com semântica exactly-once, workstreams com lease exclusivo e cross-agent resume. Claude passa para Codex sem perder contexto nem entregar duas vezes.</p>
+      </div>
+      <div class="layer">
+        <span class="tag-sm">protocol</span>
+        <span class="layer-icon">📦</span>
+        <h3>Protocolo universal</h3>
+        <p>Universal Context Packet (UCP) e Event Protocol (UEP) — contratos agnósticos de harness com trust boundaries e scanner de PII e credenciais embutido.</p>
+      </div>
+      <div class="layer">
+        <span class="tag-sm">adapters</span>
+        <span class="layer-icon">🔌</span>
+        <h3>Adapter SDK</h3>
+        <p>Manifest, conformance suite e GenericCLI. Qualquer ferramenta de linha de comando vira adapter com um JSON. Claude Code e Codex já incluídos e certificados.</p>
+      </div>
+    </div>
+  </div>
+</div>
 
 <section>
   <div class="wrap">
@@ -327,6 +394,16 @@
         <p>O revisor roda em sessão separada e sem permissão de editar arquivo. Ele confere critério por critério, com evidência, e ainda procura o teste que passa sem exercitar nada.</p>
       </div>
       <div class="pat">
+        <span class="pn">memória</span>
+        <h3>Memória entre sessões</h3>
+        <p>Working Memory para o contexto ativo, Episodic Memory para o histórico de decisões e Semantic Memory para busca por entidade. O índice SQLite é reconstruível do zero — nunca há estado corrompido irrecuperável.</p>
+      </div>
+      <div class="pat">
+        <span class="pn">multi-agente</span>
+        <h3>Handoff sem entrega dupla</h3>
+        <p>A semântica exactly-once garante que um handoff entre Claude e Codex nunca seja executado duas vezes. O lease de workstream impede dois agentes de editar o mesmo contexto ao mesmo tempo.</p>
+      </div>
+      <div class="pat">
         <span class="pn">escala</span>
         <h3>Fases independentes no mesmo projeto</h3>
         <p>Com <code>--fase &lt;nome&gt;</code>, cada fase do projeto tem o seu próprio plano em <code>plano/&lt;nome&gt;/</code>. Planos antigos continuam funcionando sem migração — basta não passar o argumento.</p>
@@ -342,7 +419,7 @@
 
 <section>
   <div class="wrap">
-    <h2>Doze comandos</h2>
+    <h2>Treze comandos</h2>
     <p class="sec-lead">Sem configuração manual. O setup conversa com você, lê o que já existe no repositório e monta o plano sozinho.</p>
     <div class="cmds">
       <div class="cmd"><span class="mono">/maestro:setup</span><p>Detecta o que já existe, faz até seis perguntas e gera o plano. Com <code>--fase &lt;nome&gt;</code> cria um plano paralelo sem tocar no existente</p></div>
@@ -357,6 +434,7 @@
       <div class="cmd"><span class="mono">/maestro:editar &lt;ID&gt;</span><p>Ajuste pontual na especificação de um bloco, ou regeração completa com o modelo forte. Valida o plano ao final</p></div>
       <div class="cmd"><span class="mono">/maestro:rollback &lt;ID&gt;</span><p>Desfaz um bloco aprovado usando <code>git revert</code> — nunca <code>git reset</code>. Verifica árvore limpa antes de tocar em qualquer coisa</p></div>
       <div class="cmd"><span class="mono">/maestro:exportar</span><p>Gera <code>plano/RELATORIO.md</code> com o estado completo, especificações e métricas. Pronto para compartilhar com o time</p></div>
+      <div class="cmd cmd-new"><span class="mono">/maestro:migrar</span><p><b>Novo em 2.0.</b> Migra a estrutura legada (v1.x) para a nova arquitetura de camadas com backup automático, relatório de o que foi convertido e rollback em caso de falha</p></div>
     </div>
   </div>
 </section>
@@ -381,6 +459,14 @@
       <div class="rail">
         <h3>Falhou duas vezes? Corrige o texto, não o modelo</h3>
         <p>Quando o mesmo bloco falha de novo, a causa quase sempre é uma especificação ambígua. Subir de modelo só encareceria o mesmo erro.</p>
+      </div>
+      <div class="rail">
+        <h3>PII e credenciais nunca entram no contexto</h3>
+        <p>O Universal Context Packet tem um scanner embutido que bloqueia e-mail pessoal, telefone, CPF, chaves de API e outros segredos antes de qualquer dado sair da máquina.</p>
+      </div>
+      <div class="rail">
+        <h3>Handoff entregue uma única vez</h3>
+        <p>A semântica exactly-once garante que uma transferência entre agentes nunca seja consumida duas vezes — mesmo sob concorrência real de múltiplos processos.</p>
       </div>
     </div>
   </div>
@@ -434,6 +520,14 @@
       <p>Do Claude Code em qualquer plano pago, e de um projeto onde você já trabalha. O Maestro não é um serviço à parte: roda dentro do Claude Code, na sua conta. Funciona no terminal, no VS Code, no JetBrains e no aplicativo de computador.</p>
     </details>
     <details>
+      <summary>Funciona com outros modelos além de Claude?</summary>
+      <p>Sim. A versão 2.0 inclui o Adapter SDK: qualquer ferramenta com um arquivo <code>adapter.manifest.json</code> válido passa a conformance suite e pode executar blocos. O Codex já está incluído e certificado. Um adapter genérico para qualquer CLI também vem de fábrica — sem precisar de plugin.</p>
+    </details>
+    <details>
+      <summary>Como automatizo em CI/CD?</summary>
+      <p>Use o modo headless: <code>python integrations/relay/headless_cli.py --headless --dry-run &lt;ID&gt;</code> — retorna código 0 ou 1, nunca pede input interativo. Um workflow de exemplo para GitHub Actions está em <code>.github/workflows/maestro-ci.yml</code> no repositório.</p>
+    </details>
+    <details>
       <summary>Serve para projeto que não é de programação?</summary>
       <p>Serve, desde que o trabalho possa ser quebrado em blocos com um jeito objetivo de dizer que está pronto. Pesquisa, produção de conteúdo em série e migração de dados funcionam bem. O que não encaixa é trabalho onde "pronto" é questão de gosto.</p>
     </details>
@@ -443,7 +537,7 @@
     </details>
     <details>
       <summary>Meu código sai da minha máquina?</summary>
-      <p>Não passa por nenhum servidor nosso. O Maestro é um conjunto de arquivos de texto que roda dentro do seu Claude Code. Não coletamos nada do seu projeto.</p>
+      <p>Não passa por nenhum servidor nosso. O Maestro é um conjunto de arquivos de texto que roda dentro do seu Claude Code. Além disso, a versão 2.0 adiciona um scanner de PII e credenciais no Universal Context Packet — nenhum dado sensível sai sem ser detectado primeiro.</p>
     </details>
     <details>
       <summary>Posso mudar as regras?</summary>
@@ -458,7 +552,7 @@
 
 <footer>
   <div class="wrap">
-    Maestro — um projeto do <a href="https://empreendedorlivre.com/">Empreendedor Livre</a>.
+    Maestro v2.0.0 — um projeto do <a href="https://empreendedorlivre.com/">Empreendedor Livre</a>.
     Claude e Claude Code são produtos da Anthropic; este projeto não tem relação de parceria com ela.
   </div>
 </footer>
@@ -475,8 +569,6 @@
   var REPO = 'torvik/Maestro';
   /* ================================== */
 
-  // Preenche o comando exibido e o link "Ver no GitHub" a partir da mesma
-  // variável REPO acima — nunca mais fica um texto fixo desatualizado.
   document.getElementById('repoInline').textContent = REPO;
   document.getElementById('repoLink').href = 'https://github.com/' + REPO;
 

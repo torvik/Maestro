@@ -12,3 +12,4 @@ __pycache__/
 # arquivos internos de planejamento e memória de agentes
 plano/
 .claude/
+_test_memory_review*/
