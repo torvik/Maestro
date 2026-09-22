@@ -1,0 +1,38 @@
+name: Maestro CI
+
+# Exemplo de execucao headless do Maestro em CI/CD.
+# Ver docs/integrations/cicd.md para a explicacao completa (variaveis de
+# ambiente, modo headless, e a nota de restricao de escopo do bloco F15-01).
+
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      block_id:
+        description: 'ID do bloco para dry-run headless (opcional)'
+        required: false
+        default: ''
+
+jobs:
+  run-next:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # Somente leitura: mostra qual bloco seria executado a seguir.
+      # Nao depende de nenhuma credencial ou servico externo.
+      - name: Mostrar proximo bloco liberado
+        run: python scripts/maestro_next.py --run
+
+      # Exemplo de dry-run headless de um bloco especifico via workflow_dispatch.
+      # So roda quando o input `block_id` e informado manualmente.
+      - name: Dry-run headless (opcional, via workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.block_id != ''
+        env:
+          MAESTRO_HEADLESS: 'true'
+        run: |
+          python integrations/relay/headless_cli.py --headless --dry-run "${{ github.event.inputs.block_id }}"
