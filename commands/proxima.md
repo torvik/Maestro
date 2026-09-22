@@ -16,3 +16,8 @@ Caso contrário, delegue ao agente `maestro`, usando a skill `executar-bloco`.
 Alvo: $ARGUMENTS (se vazio, o maestro escolhe o próximo bloco liberado; se for um ID de bloco específico, execute aquele bloco)
 
 Lembre o maestro das regras invioláveis: um bloco por sessão; bloco com `bloqueado_por` preenchido não é despachado; nenhum C5 vai para Haiku; o revisor é sempre igual ou superior ao executor; e nada é marcado como concluído sem o veredito do revisor.
+
+O lifecycle do bloco escolhido é conduzido por `scripts/maestro_run.py`: `--dry-run <ID>` para inspecionar o manifest sem escrever nada, `start <ID>` para adquirir o lock e marcar `em_andamento`, `test <ID>` para rodar o `comando_teste` e `finish <ID> --success|--fail` para encerrar. O modelo do executor e do revisor sai do manifest — nunca de um nome fixo escrito aqui.
+
+<!-- maestro_next: python scripts/maestro_next.py [--fase <nome>] [--run] [--json] -->
+<!-- maestro_run: python scripts/maestro_run.py --dry-run <ID> | start <ID> | test <ID> | finish <ID> --success|--fail [--fase <nome>] [--json] -->

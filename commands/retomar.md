@@ -26,3 +26,29 @@ Para cada bloco `em_andamento`:
      - **(c) Descartar e refazer**: volte para `pendente` com `tentativas` inalterado, anote que foi descartado por sessão perdida
 
 Execute a opção escolhida pelo usuário e atualize `plano/blocos.json`. Se o passo 0 identificou lock da própria sessão morta e o dono autorizou a liberação, libere-o (`lock.py liberar --blocos <IDs>`) como parte da execução da opção escolhida.
+
+## Checkpoint de bloco (F10-02)
+
+Antes do passo 1, verifique o checkpoint do bloco interrompido:
+
+```python
+from packages.core.state import Checkpoint
+c = Checkpoint()
+block_id = "<ID do bloco em_andamento>"
+
+if c.exists(block_id):
+    data = c.load(block_id)
+    print("Checkpoint encontrado:", data.get("timestamp"))
+    print("Estado salvo:", data.get("block_state", {}).get("estado"))
+    if c.has_git_drift(block_id):
+        print("AVISO: HEAD atual difere do HEAD no checkpoint — código foi alterado externamente.")
+    # Use data["block_state"] para restaurar o contexto antes de continuar
+else:
+    print("Sem checkpoint — bloco será reiniciado do zero, tentativas incrementadas.")
+```
+
+Após decisão do usuário (opção a/b/c), limpe o checkpoint:
+
+```python
+c.clear(block_id)
+```

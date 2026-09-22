@@ -52,7 +52,7 @@ Digite uma barra:
 /
 ```
 
-Devem aparecer na lista todos os comandos do Maestro:
+Devem aparecer os doze comandos do Maestro:
 
 | Comando | O que faz |
 |---|---|

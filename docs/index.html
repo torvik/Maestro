@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maestro — O modelo caro planeja. O barato executa.</title>
+<meta name="description" content="Maestro: plugin aberto para Claude Code que quebra seu projeto em blocos, classifica por complexidade e roteia cada um para o modelo certo.">
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg-soft: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                 "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .wrap {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* ---------- header ---------- */
+
+  header {
+    text-align: center;
+    padding: 96px 0 72px;
+    border-bottom: 1px solid var(--border);
+    background:
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(88, 166, 255, 0.14), transparent 70%);
+  }
+
+  h1 {
+    font-size: clamp(2.8rem, 9vw, 4.5rem);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    margin: 0 0 12px;
+    background: linear-gradient(180deg, #ffffff, #a6c8ee);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .tagline {
+    font-size: clamp(1.05rem, 3.4vw, 1.45rem);
+    color: var(--text);
+    font-weight: 500;
+    margin: 0 0 8px;
+  }
+
+  .sub {
+    color: var(--muted);
+    max-width: 560px;
+    margin: 0 auto 28px;
+    font-size: 1rem;
+  }
+
+  .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 32px;
+  }
+
+  .badge {
+    display: inline-block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--bg-soft);
+    color: var(--muted);
+  }
+
+  .badge strong { color: var(--accent); font-weight: 700; }
+
+  .cta {
+    display: inline-block;
+    background: var(--accent);
+    color: #04121f;
+    font-weight: 700;
+    font-size: 1rem;
+    padding: 13px 30px;
+    border-radius: 8px;
+    border: 1px solid #79b8ff;
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+
+  .cta:hover {
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 22px rgba(88, 166, 255, 0.28);
+  }
+
+  /* ---------- sections ---------- */
+
+  section { padding: 72px 0; border-bottom: 1px solid var(--border); }
+
+  h2 {
+    font-size: 1.7rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0 0 8px;
+  }
+
+  .lede { color: var(--muted); margin: 0 0 36px; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+  }
+
+  .card {
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    transition: border-color .15s ease, transform .15s ease;
+  }
+
+  .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+  .card h3 {
+    font-size: 1.05rem;
+    margin: 0 0 8px;
+    color: var(--text);
+  }
+
+  .card p { margin: 0; color: var(--muted); font-size: 0.94rem; }
+
+  .num {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.12em;
+    margin-bottom: 10px;
+  }
+
+  /* ---------- layers ---------- */
+
+  .layers { display: grid; gap: 12px; }
+
+  .layer {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+
+  .layer .icon { font-size: 1.5rem; line-height: 1.3; flex: none; }
+  .layer .name { font-weight: 700; display: block; }
+  .layer .desc { color: var(--muted); font-size: 0.94rem; }
+
+  /* ---------- code ---------- */
+
+  pre {
+    background: #010409;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
+    overflow-x: auto;
+    margin: 0;
+  }
+
+  code {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+                 "Liberation Mono", monospace;
+    font-size: 0.9rem;
+    color: #b9d4f2;
+  }
+
+  .cmd { display: block; white-space: pre; }
+  .cmd::before { content: "$ "; color: #57ab7a; }
+
+  .note { color: var(--muted); font-size: 0.9rem; margin-top: 18px; }
+
+  /* ---------- footer ---------- */
+
+  footer {
+    text-align: center;
+    padding: 40px 0 56px;
+    color: var(--muted);
+    font-size: 0.88rem;
+  }
+
+  @media (max-width: 600px) {
+    header { padding: 64px 0 52px; }
+    section { padding: 52px 0; }
+    .layer { flex-direction: column; gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>Maestro</h1>
+    <p class="tagline">O modelo caro planeja. O barato executa.</p>
+    <p class="sub">
+      Plugin gratuito e aberto para Claude Code que quebra seu projeto em blocos, decide o quanto
+      cada um é arriscado e manda cada um para o modelo certo — com critério de aceite verificável
+      por teste, não por opinião do modelo.
+    </p>
+    <div class="badges">
+      <span class="badge">versão <strong>2.0.0</strong></span>
+      <span class="badge">licença MIT</span>
+      <span class="badge">requer Claude Code</span>
+    </div>
+    <a class="cta" href="https://github.com/torvik/Maestro">Ver no GitHub</a>
+  </div>
+</header>
+
+<section id="o-que-e">
+  <div class="wrap">
+    <h2>O que é</h2>
+    <p class="lede">Três decisões que o Maestro toma por você, todas as vezes, do mesmo jeito.</p>
+    <div class="grid">
+      <div class="card">
+        <span class="num">01</span>
+        <h3>Classifica por complexidade</h3>
+        <p>Cada bloco recebe uma nota de C1 a C5 pela decisão que o executor precisa tomar sozinho — não pelo tamanho — e vai para o modelo mais barato que dá conta.</p>
+      </div>
+      <div class="card">
+        <span class="num">02</span>
+        <h3>Revisor independente</h3>
+        <p>Quem escreve não aprova. O revisor roda em sessão separada, sem permissão de editar arquivo, e confere critério por critério com evidência.</p>
+      </div>
+      <div class="card">
+        <span class="num">03</span>
+        <h3>Multi-agente real</h3>
+        <p>Memória persistente, handoff tipado entre agentes, protocolo agnóstico de harness e SDK de adapters. Não é um wrapper de prompt.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="camadas">
+  <div class="wrap">
+    <h2>Camadas</h2>
+    <p class="lede">Cinco camadas isoladas. Use as que precisar — os comandos do dia a dia não exigem nenhuma configuração.</p>
+    <div class="layers">
+      <div class="layer">
+        <span class="icon">🧠</span>
+        <div>
+          <span class="name">Memory</span>
+          <span class="desc">Working, Episodic, Semantic e Procedural Memory com índice SQLite — o agente lembra entre sessões.</span>
+        </div>
+      </div>
+      <div class="layer">
+        <span class="icon">⚡</span>
+        <div>
+          <span class="name">Providers</span>
+          <span class="desc">Roteamento usage-aware e capacity-aware, com telemetria CEV (custo-eficiência-velocidade) por provider.</span>
+        </div>
+      </div>
+      <div class="layer">
+        <span class="icon">🤝</span>
+        <div>
+          <span class="name">Handoff</span>
+          <span class="desc">Transferência tipada entre agentes, com semântica exactly-once e workstreams sob lease exclusivo.</span>
+        </div>
+      </div>
+      <div class="layer">
+        <span class="icon">📦</span>
+        <div>
+          <span class="name">Protocol</span>
+          <span class="desc">Universal Context Packet (UCP) e Universal Event Protocol (UEP) — contratos agnósticos de harness.</span>
+        </div>
+      </div>
+      <div class="layer">
+        <span class="icon">🔌</span>
+        <div>
+          <span class="name">Adapter SDK</span>
+          <span class="desc">Manifests, conformance suite e GenericCLI — qualquer ferramenta de linha de comando vira adapter.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="instalar">
+  <div class="wrap">
+    <h2>Instalar</h2>
+    <p class="lede">Três comandos dentro do Claude Code. Nada sai da sua máquina.</p>
+    <pre><code><span class="cmd">/plugin marketplace add torvik/Maestro</span><span class="cmd">/plugin install maestro@maestro</span><span class="cmd">/maestro:setup</span></code></pre>
+    <p class="note">
+      O <code>/maestro:setup</code> detecta o que já existe no repositório, faz até seis perguntas e
+      gera o plano — que você lê e corrige antes de qualquer linha ser escrita.
+    </p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Maestro v2.0.0 · MIT · <a href="https://github.com/torvik/Maestro">torvik/Maestro</a>
+  </div>
+</footer>
+
+</body>
+</html>

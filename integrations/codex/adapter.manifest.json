@@ -1,0 +1,20 @@
+{
+  "name": "codex",
+  "version": "1.0.0",
+  "harness": "codex",
+  "supported_events": [
+    "block_started",
+    "file_read",
+    "file_written",
+    "test_run",
+    "block_completed",
+    "block_failed"
+  ],
+  "capabilities": {
+    "streaming_events": false,
+    "structured_output": false,
+    "shell_execution": true
+  },
+  "adapter_api_version": 1,
+  "description": "Codex harness: drives a block through scripts/maestro_run.py (start/test/finish), instructed by AGENTS.md generated from AGENTS.template.md."
+}

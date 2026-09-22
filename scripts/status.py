@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Quadro do plano. Deterministico: nao consome token de modelo."""
 import json, sys, os, glob as _glob, urllib.request
+import importlib.util as _iutil
 
 CONFIG = os.environ.get("MAESTRO_CONFIG", "maestro.config.json")
 
@@ -32,7 +33,7 @@ def _resolve_plano(fase_arg):
             found = sorted(_glob.glob("plano/*/blocos.json"))
             print(f"ERRO: fase {fase_arg!r} nao encontrada ({caminho}).", file=sys.stderr)
             if found:
-                fases = [f.split("/")[1] for f in found]
+                fases = [f.replace("\\", "/").split("/")[1] for f in found]
                 print(f"  Fases disponiveis: {', '.join(fases)}", file=sys.stderr)
             sys.exit(1)
         return caminho
@@ -53,7 +54,7 @@ def _resolve_plano(fase_arg):
         print("ERRO: nenhum plano encontrado. Rode /maestro:setup.", file=sys.stderr)
         sys.exit(1)
     else:
-        fases = [f.split("/")[1] for f in found]
+        fases = [f.replace("\\", "/").split("/")[1] for f in found]
         print(f"ERRO: multiplas fases encontradas: {', '.join(fases)}", file=sys.stderr)
         print("  Passe --fase <nome> para selecionar.", file=sys.stderr)
         sys.exit(1)
@@ -197,6 +198,48 @@ def orfaos_por_bloco(blocos):
         if orfas:
             mapa[b["id"]] = orfas
     return mapa
+
+# ---------------------------------------------------------------------------
+# Estado live (.maestro/state.json) — leitura aditiva e nao-bloqueante
+# ---------------------------------------------------------------------------
+
+def _load_maestro_state():
+    """Carrega maestro_state do mesmo diretorio de status.py. Retorna modulo ou None."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    spec = _iutil.spec_from_file_location(
+        "maestro_state", os.path.join(here, "maestro_state.py")
+    )
+    if spec is None:
+        return None
+    mod = _iutil.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(mod)
+        return mod
+    except Exception:
+        return None
+
+
+def secao_estado_live(state):
+    """Imprime --- ESTADO LIVE --- quando current_block ou locks nao-vazios.
+    Nao imprime nada quando o estado esta vazio (current_block None e locks [])."""
+    if not state:
+        return
+    current_block = state.get("current_block")
+    phase = state.get("phase")
+    locks = state.get("locks") or []
+    if current_block is None and not locks:
+        return
+    print("--- ESTADO LIVE ---")
+    if current_block is not None:
+        print(f"  {'bloco corrente':<17}{current_block}")
+    if phase is not None:
+        print(f"  {'fase':<17}{phase}")
+    for lock in locks:
+        lid = lock.get("id", "?")
+        owner = lock.get("owner", "?")
+        desde = lock.get("acquired_at", "?")
+        print(f"  {'locks':<17}{lid}  (owner: {owner}  desde {desde})")
+    print()
 
 # ---------------------------------------------------------------------------
 # Metricas: leitura blindada (metricas.json e append-only, nunca escrito aqui)
@@ -370,6 +413,9 @@ def resumo_metricas(metricas_path):
 # ---------------------------------------------------------------------------
 
 def main():
+    _mstate_mod = _load_maestro_state()
+    _mstate = _mstate_mod.read_state() if _mstate_mod else None
+
     args = sys.argv[1:]
     fase_arg = None
     bloco_arg = None
@@ -473,6 +519,8 @@ def main():
             for d in orfaos_map.get(b["id"], []):
                 print(f"  {b['id']}  depende de {d}")
         print()
+
+    secao_estado_live(_mstate)
 
     distribuicao(blocos)
     resumo_metricas(metricas_path)
