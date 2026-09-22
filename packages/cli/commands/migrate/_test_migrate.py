@@ -308,6 +308,141 @@ def test_T09_pos_verificacao_status_e_next_funcionam():
 
 
 # ---------------------------------------------------------------------------
+# T_DETECT — detectar_estrutura() identifica corretamente LEGADA vs NOVA
+# ---------------------------------------------------------------------------
+
+
+def test_T_detectar_estrutura_legada():
+    with _tmp_root() as root:
+        config_path = root / "maestro.config.json"
+        config_path.write_text(
+            json.dumps({"maestro_versao": "1.3.2"}, ensure_ascii=False), encoding="utf-8"
+        )
+        plano_path = root / "plano" / "blocos.json"  # nao criado de proposito
+
+        info = mm.detectar_estrutura(root, config_path, plano_path)
+
+        check(info["motivos_legado"] != [], "T_DETECT_LEGADA: motivos_legado nao vazio")
+        check(
+            len(info["motivos_legado"]) == 2,
+            "T_DETECT_LEGADA: 2 motivos detectados (.maestro/blocks ausente + versao 1.x)",
+        )
+        check(
+            any("ausente" in m for m in info["motivos_legado"]),
+            "T_DETECT_LEGADA: motivo cita .maestro/blocks ausente ou vazio",
+        )
+        check(
+            any("1.3.2" in m for m in info["motivos_legado"]),
+            "T_DETECT_LEGADA: motivo cita maestro_versao 1.3.2 (v1.x)",
+        )
+        check(info["ja_migrado"] is False, "T_DETECT_LEGADA: ja_migrado False")
+
+
+def test_T_detectar_estrutura_nova():
+    with _tmp_root() as root:
+        config_path = root / "maestro.config.json"
+        config_path.write_text(
+            json.dumps({"maestro_versao": "2.0.0"}, ensure_ascii=False), encoding="utf-8"
+        )
+        blocks_dir = root / ".maestro" / "blocks"
+        blocks_dir.mkdir(parents=True)
+        (blocks_dir / "B01.json").write_text(
+            json.dumps({"id": "B01"}, ensure_ascii=False), encoding="utf-8"
+        )
+        plano_path = root / "plano" / "blocos.json"  # nao criado de proposito
+
+        info = mm.detectar_estrutura(root, config_path, plano_path)
+
+        check(info["motivos_legado"] == [], "T_DETECT_NOVA: motivos_legado vazio (estrutura NOVA)")
+        check(info["ja_migrado"] is True, "T_DETECT_NOVA: ja_migrado True (.maestro/blocks/ populado)")
+
+
+# ---------------------------------------------------------------------------
+# T_RELATORIO — conteudo do migration-report.json em migracao bem-sucedida
+# ---------------------------------------------------------------------------
+
+
+def test_T_relatorio_conteudo_sucesso():
+    with _tmp_root() as root:
+        blocos = _sample_blocos(2)
+        _write_plano(root, blocos, formato="array")
+
+        code, out = _run(root, dry_run=False)
+        check(code == 0, "T_RELATORIO: exit code 0")
+
+        backups = sorted((root / ".maestro" / "migration-backup").glob("*"))
+        check(len(backups) == 1, "T_RELATORIO: um diretorio de backup criado")
+        if backups:
+            report_path = backups[0] / "migration-report.json"
+            check(report_path.exists(), "T_RELATORIO: migration-report.json existe")
+            if report_path.exists():
+                relatorio = json.loads(report_path.read_text(encoding="utf-8"))
+                ids_esperados = [b["id"] for b in blocos]
+                check(
+                    relatorio.get("convertidos") == ids_esperados,
+                    "T_RELATORIO: 'convertidos' lista os IDs convertidos",
+                )
+                check(
+                    relatorio.get("preservados_em_plano") == ids_esperados,
+                    "T_RELATORIO: 'preservados_em_plano' presente e igual aos convertidos",
+                )
+                check(
+                    relatorio.get("nao_migrados") == [],
+                    "T_RELATORIO: 'nao_migrados' presente como lista vazia",
+                )
+                check(
+                    bool(relatorio.get("timestamp")),
+                    "T_RELATORIO: 'timestamp' presente e nao vazio",
+                )
+
+
+def test_T_blocos_nao_migraveis():
+    with _tmp_root() as root:
+        blocos = [
+            {"id": "F99-01", "titulo": "Bloco valido", "estado": "pendente"},
+            {"titulo": "Bloco sem id", "estado": "pendente"},
+            {"id": "F99-01", "titulo": "Bloco duplicado", "estado": "pendente"},
+        ]
+        _write_plano(root, blocos, formato="array")
+
+        code, out = _run(root, dry_run=False)
+        check(code == 0, "T_NAO_MIGRAVEL: exit code 0 (migracao parcial nao e falha)")
+
+        backups = sorted((root / ".maestro" / "migration-backup").glob("*"))
+        check(len(backups) == 1, "T_NAO_MIGRAVEL: um diretorio de backup criado")
+        if backups:
+            report_path = backups[0] / "migration-report.json"
+            relatorio = json.loads(report_path.read_text(encoding="utf-8"))
+            check(
+                relatorio.get("convertidos") == ["F99-01"],
+                "T_NAO_MIGRAVEL: 'convertidos' contem somente o bloco valido",
+            )
+            nao_migrados = relatorio.get("nao_migrados", [])
+            check(
+                len(nao_migrados) == 2,
+                "T_NAO_MIGRAVEL: 'nao_migrados' contem as duas entradas invalidas",
+            )
+            check(
+                any(item.get("indice") == 1 for item in nao_migrados),
+                "T_NAO_MIGRAVEL: bloco sem 'id' esta em nao_migrados (indice 1)",
+            )
+            check(
+                any(item.get("indice") == 2 and item.get("id") == "F99-01" for item in nao_migrados),
+                "T_NAO_MIGRAVEL: bloco duplicado esta em nao_migrados (indice 2, id F99-01)",
+            )
+
+        blocks_dir = root / ".maestro" / "blocks"
+        check(
+            (blocks_dir / "F99-01.json").exists(),
+            "T_NAO_MIGRAVEL: F99-01.json criado em .maestro/blocks/",
+        )
+        check(
+            len(list(blocks_dir.glob("*.json"))) == 1,
+            "T_NAO_MIGRAVEL: apenas 1 arquivo criado em .maestro/blocks/ (blocos invalidos ignorados)",
+        )
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -323,6 +458,10 @@ def main():
         test_T07_ja_migrado_com_force_regenera,
         test_T08_plano_ausente_nao_cria_backup,
         test_T09_pos_verificacao_status_e_next_funcionam,
+        test_T_detectar_estrutura_legada,
+        test_T_detectar_estrutura_nova,
+        test_T_relatorio_conteudo_sucesso,
+        test_T_blocos_nao_migraveis,
     ]
     for test in tests:
         test()
