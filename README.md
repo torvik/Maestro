@@ -8,11 +8,11 @@ Plugin gratuito e aberto para [Claude Code](https://claude.com/code) que quebra 
 decide o quanto cada um é arriscado e manda cada um para o modelo certo — com critério de aceite
 verificável por teste, não por opinião do modelo.
 
-[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.3.2-blue)](plugins/maestro/CHANGELOG.md)
+[![Versão](https://img.shields.io/badge/vers%C3%A3o-2.0.0-blue)](plugins/maestro/CHANGELOG.md)
 [![Licença](https://img.shields.io/badge/licença-MIT-lightgrey)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/requer-Claude%20Code-black)](https://claude.com/code)
 
-[Instalar](#instalar) · [Como funciona](#como-funciona) · [Comandos](#comandos) · [Padrões aplicados](#padrões-aplicados) · [FAQ](#perguntas-frequentes)
+[Instalar](#instalar) · [Como funciona](#como-funciona) · [Camadas](#camadas-do-sistema) · [Comandos](#comandos) · [Padrões aplicados](#padrões-aplicados) · [FAQ](#perguntas-frequentes)
 
 </div>
 
@@ -59,6 +59,22 @@ Uma divisão saudável do trabalho fica perto de **15% Opus / 60% Sonnet / 25% H
 `/maestro:status` mede a sua distribuição real e avisa quando o modelo caro passa disso — sinal
 quase sempre de que uma especificação ficou ambígua e alguém subiu de modelo por reflexo.
 
+## Camadas do sistema
+
+A partir da 2.0.0 o Maestro não é só um roteador de blocos: é uma base multi-agente em cinco camadas,
+cada uma isolada em `packages/core/` e utilizável separadamente.
+
+| Camada | O que resolve |
+|---|---|
+| 🧠 **Memory** | Working, Episodic, Semantic e Procedural Memory com índice SQLite — o agente lembra entre sessões, sem depender da janela de contexto |
+| ⚡ **Providers** | Roteamento *usage-aware* e *capacity-aware*; telemetria CEV (custo-eficiência-velocidade) por provider |
+| 🤝 **Handoff** | Transferência tipada entre agentes, com semântica *exactly-once* e workstreams sob lease exclusivo |
+| 📦 **Protocol** | Universal Context Packet (UCP) e Universal Event Protocol (UEP) — contratos agnósticos de harness, com trust boundaries |
+| 🔌 **Adapter SDK** | Manifests, conformance suite e GenericCLI — qualquer ferramenta de linha de comando vira adapter |
+
+Nada disso precisa ser configurado para usar os comandos `/maestro:*` do dia a dia. As camadas
+aparecem quando você quer trocar de modelo, integrar outra ferramenta ou rodar sem humano na frente.
+
 ## Instalar
 
 ```
@@ -88,6 +104,7 @@ Guias completos:
 | `/maestro:editar <ID>` | Ajuste pontual ou regeração completa da spec de um bloco pelo arquiteto |
 | `/maestro:rollback <ID>` | Desfaz um bloco aprovado com `git revert`. Nunca `git reset`. Exige árvore limpa |
 | `/maestro:exportar` | Gera `plano/RELATORIO.md` com estado, specs e métricas — pronto para compartilhar |
+| `/maestro:migrar` | Migra estrutura legada para a nova, com backup automático e relatório |
 | `/maestro:help` | Lista todos os comandos com descrição, quando usar cada um e exemplos. Inclui guia de início rápido em 3 passos |
 
 Todos os comandos aceitam `--fase <nome>` para operar em `plano/<nome>/blocos.json`. Planos legados continuam funcionando sem o argumento.
@@ -194,14 +211,25 @@ Commits sempre um por vez.
 ```
 maestro/
 ├── .claude-plugin/marketplace.json     ← usado pelo Claude Code para listar o plugin
-└── plugins/maestro/
-    ├── agents/          seis agentes, cada um com o modelo fixado no papel
-    ├── commands/        doze comandos /maestro:*
-    ├── skills/          o método: EARS, anatomia de spec, disciplina de execução
-    ├── scripts/         status, validador, exportador, paralelo — determinísticos, custo zero
-    ├── README.md        referência técnica
-    ├── CHANGELOG.md     o que mudou em cada versão
-    └── VERSAO.md        política de versionamento semântico
+├── plugins/maestro/
+│   ├── agents/          seis agentes, cada um com o modelo fixado no papel
+│   ├── commands/        os comandos /maestro:*
+│   ├── skills/          o método: EARS, anatomia de spec, disciplina de execução
+│   ├── scripts/         status, validador, exportador, paralelo — determinísticos, custo zero
+│   ├── README.md        referência técnica
+│   └── CHANGELOG.md     o que mudou em cada versão
+├── packages/core/
+│   ├── memory/          working, episodic, semantic e procedural memory
+│   ├── providers/       roteamento usage-aware e capacity-aware
+│   ├── handoff/         transferência tipada entre agentes
+│   ├── improvement/     propostas de melhoria com approval gate
+│   └── protocol/        UCP, UEP e Adapter SDK
+├── integrations/
+│   ├── claude-code/     adapter manifest + harness
+│   ├── codex/           adapter manifest + harness
+│   └── relay/           modo headless e stub de integração contínua
+├── .github/workflows/   CI de exemplo com GitHub Actions
+└── VERSAO.md            política de versionamento semântico
 ```
 
 ## Perguntas frequentes
@@ -222,6 +250,15 @@ passa por um servidor nosso.
 Antes de cada dispatch, o Maestro imprime na conversa o modelo e agente escolhidos — por exemplo:
 `→ F2-04 B-SETUP-DEFAULTS · C2 · modelo: claude-haiku-4-5 · agente: maestro:operario`
 Para ver o custo real da sessão, use `/usage` (interno do Claude Code).
+
+**O Maestro funciona com outros modelos além de Claude?**
+Sim. Qualquer ferramenta com um `adapter.manifest.json` válido que passe na conformance suite
+vira um adapter — o protocolo (UCP/UEP) é agnóstico de harness. O Codex já vem incluído em
+`integrations/codex/`.
+
+**Como faço CI/CD automático?**
+Use `integrations/relay/headless_cli.py --headless --dry-run <ID>` para executar sem interação
+humana, ou parta do workflow de exemplo em `.github/workflows/maestro-ci.yml`.
 
 **É pago mesmo que seja depois?**
 Não. Gratuito e aberto, licença MIT.
