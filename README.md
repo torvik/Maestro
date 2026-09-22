@@ -1,5 +1,7 @@
 <div align="center">
 
+[🇺🇸 English version](README.en.md)
+
 # Maestro
 
 **O modelo caro planeja. O barato executa.**
