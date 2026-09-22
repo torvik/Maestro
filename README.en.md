@@ -95,17 +95,17 @@ Complete guides:
 |---|---|
 | `/maestro:setup` | Detects what already exists in the repository, asks up to 6 questions and generates the plan. `--phase <name>` creates a separate phase plan |
 | `/maestro:status` | Shows the board — complete, released, blocked — and distribution by model. `--block <ID>` shows full block details |
-| `/maestro:proxima` | Executes the next block on the right model and calls the reviewer. `--dry-run` shows without dispatching; `--parallel` dispatches a batch of blocks simultaneously |
-| `/maestro:planejar` | Writes the specification for a new block, with the powerful model |
-| `/maestro:replanejar` | Adjusts the plan when reality changes |
-| `/maestro:custos` | Planned distribution by model + reminder of native `/context` and `/usage` commands |
-| `/maestro:retomar` | Recovers interrupted blocks (`in_progress`) after crash or session compaction |
-| `/maestro:revisar <ID>` | Audit review of any block, independent of execution flow |
-| `/maestro:destravar <ID>` | Clears a block's lock without editing JSON. Requires explicit confirmation |
-| `/maestro:editar <ID>` | Spot adjustment or full regeneration of a block's spec by the architect |
+| `/maestro:next` | Executes the next block on the right model and calls the reviewer. `--dry-run` shows without dispatching; `--parallel` dispatches a batch of blocks simultaneously |
+| `/maestro:plan` | Writes the specification for a new block, with the powerful model |
+| `/maestro:replan` | Adjusts the plan when reality changes |
+| `/maestro:costs` | Planned distribution by model + reminder of native `/context` and `/usage` commands |
+| `/maestro:resume` | Recovers interrupted blocks (`in_progress`) after crash or session compaction |
+| `/maestro:review <ID>` | Audit review of any block, independent of execution flow |
+| `/maestro:unblock <ID>` | Clears a block's lock without editing JSON. Requires explicit confirmation |
+| `/maestro:edit <ID>` | Spot adjustment or full regeneration of a block's spec by the architect |
 | `/maestro:rollback <ID>` | Undoes an approved block with `git revert`. Never `git reset`. Requires clean tree |
-| `/maestro:exportar` | Generates `plano/RELATORIO.md` with state, specs and metrics — ready to share |
-| `/maestro:migrar` | Migrates legacy structure to the new one, with automatic backup and report |
+| `/maestro:export` | Generates `plan/REPORT.md` with state, specs and metrics — ready to share |
+| `/maestro:migrate` | Migrates legacy structure to the new one, with automatic backup and report |
 | `/maestro:help` | Lists all commands with description, when to use each and examples. Includes 3-step quick start guide |
 
 All commands accept `--phase <name>` to operate on `plano/<name>/blocos.json`. Legacy plans continue working without the argument.
